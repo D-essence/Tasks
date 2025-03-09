@@ -255,7 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         activityId: activity.id,
                         activityName: activity.name,
                         name: task,
-                        completed: false
+                        completed: false,
+                        isRecurring: true // タスクが毎日のタスクかどうかを示すフラグ
                     });
                 });
             }
@@ -277,6 +278,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (savedActivities && savedDailyTasks) {
                 state.activities = JSON.parse(savedActivities);
                 state.dailyTasks = JSON.parse(savedDailyTasks);
+                
+                // isRecurringフラグがない古いタスクに対してフラグを追加
+                const today = getCurrentDate();
+                if (state.dailyTasks[today]) {
+                    state.dailyTasks[today].forEach(task => {
+                        if (task.isRecurring === undefined) {
+                            task.isRecurring = true;
+                        }
+                    });
+                }
             } else {
                 // 初期データの作成と保存
                 const initialData = initializeData();
@@ -668,6 +679,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         activity.completed = true;
                         activity.progress = 100;
                         needsUpdate = true;
+                        
+                        // 完了した事業のタスクを今日のタスクから削除
+                        removeCompletedActivityTasks(activity.id);
                         break;
                 }
                 
@@ -679,6 +693,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('ドロップ処理中にエラーが発生しました:', error);
             }
         });
+    }
+
+    // 完了した事業のタスクを今日のタスクから削除する関数
+    function removeCompletedActivityTasks(activityId) {
+        const today = getCurrentDate();
+        if (state.dailyTasks[today]) {
+            state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
+                task.activityId !== activityId
+            );
+            saveData();
+        }
     }
 
     // KPIの完了状態に基づいて進捗度を計算する関数
@@ -791,6 +816,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 100%の場合は完了フラグも設定
                 if (activity.progress >= 100) {
                     activity.completed = true;
+                    // 完了した事業のタスクを今日のタスクから削除
+                    removeCompletedActivityTasks(activity.id);
                 } else {
                     activity.completed = false;
                 }
@@ -858,6 +885,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 tasksList.appendChild(taskItem);
             });
+            
+            // 削除ボタンのイベントリスナーを追加（※修正点：このパートを追加）
+            tasksList.querySelectorAll('.detail-item-delete-btn').forEach(button => {
+                button.style.display = 'flex'; // ボタンを表示
+                button.addEventListener('click', (e) => {
+                    const type = e.currentTarget.dataset.type;
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    
+                    if (type === 'task') {
+                        // タスクを削除
+                        const taskToRemove = activity.dailyTasks[index];
+                        activity.dailyTasks.splice(index, 1);
+                        
+                        // 今日のタスクからも対応するタスクを削除
+                        removeTaskFromToday(activity.id, taskToRemove);
+                        
+                        // データを保存
+                        saveData();
+                        
+                        // 再レンダリング
+                        renderActivityDetail();
+                    }
+                });
+            });
         } else {
             // タスクがない場合のメッセージ
             tasksList.innerHTML = '<div class="empty-list-message">毎日のタスクはありません</div>';
@@ -901,6 +952,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 最終更新日時を更新
         updateLastUpdated();
+    }
+
+    // 今日のタスクから特定のタスクを削除する関数
+    function removeTaskFromToday(activityId, taskToRemove) {
+        const today = getCurrentDate();
+        if (state.dailyTasks[today]) {
+            state.dailyTasks[today] = state.dailyTasks[today].filter(task => {
+                if (task.activityId === activityId && task.name === taskToRemove && task.isRecurring) {
+                    return false; // 削除するタスクと一致する場合は除外
+                }
+                return true;
+            });
+        }
     }
 
     // 進捗表示を更新する関数
@@ -1189,16 +1253,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!state.dailyTasks[today]) {
             state.dailyTasks[today] = [];
             
-            // 各活動の毎日のタスクをコピー（タスクが存在する場合のみ）
+            // 各活動の毎日のタスクをコピー（タスクが存在する場合のみ、完了していない事業のみ）
             state.activities.forEach(activity => {
-                if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+                if (activity.dailyTasks && activity.dailyTasks.length > 0 && !activity.completed) {
                     activity.dailyTasks.forEach(task => {
                         state.dailyTasks[today].push({
                             id: generateId(),
                             activityId: activity.id,
                             activityName: activity.name,
                             name: task,
-                            completed: false
+                            completed: false,
+                            isRecurring: true
                         });
                     });
                 }
@@ -1207,40 +1272,86 @@ document.addEventListener('DOMContentLoaded', function() {
             saveData();
         }
         
-        // タスクをソート (活動名でソート)
-        const sortedTasks = [...state.dailyTasks[today]].sort((a, b) => {
-            return a.activityName.localeCompare(b.activityName);
-        });
+        // 完了した事業のタスクを除外する
+        const completedActivityIds = state.activities
+            .filter(a => a.completed)
+            .map(a => a.id);
+            
+        state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
+            !completedActivityIds.includes(task.activityId) || !task.isRecurring
+        );
         
-        // タスクをレンダリング
-        if (sortedTasks.length === 0) {
-            tasksContainer.innerHTML = '<div class="empty-list-message">今日のタスクはありません</div>';
-        } else {
-            sortedTasks.forEach(task => {
-                const taskItem = document.createElement('div');
-                taskItem.className = `task-item ${task.completed ? 'task-completed' : ''}`;
-                taskItem.dataset.id = task.id;
-                
-                taskItem.innerHTML = `
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                    <div class="task-content">
-                        <div class="task-name">${task.name}</div>
-                        <div class="task-activity">${task.activityName}</div>
-                    </div>
-                `;
-                
-                tasksContainer.appendChild(taskItem);
-                
-                // チェックボックスのイベントリスナーを設定
-                const checkbox = taskItem.querySelector('.task-checkbox');
-                checkbox.addEventListener('change', () => {
-                    task.completed = checkbox.checked;
-                    taskItem.classList.toggle('task-completed', checkbox.checked);
-                    updateTaskCompletion();
-                    saveData();
-                });
-            });
+        // タスクをグループ分け
+        const recurringTasks = state.dailyTasks[today].filter(task => task.isRecurring);
+        const temporaryTasks = state.dailyTasks[today].filter(task => !task.isRecurring);
+        
+        // 各グループをソート (活動名でソート)
+        recurringTasks.sort((a, b) => a.activityName.localeCompare(b.activityName));
+        
+        // タスク追加セクションの表示
+        const addTaskSection = document.createElement('div');
+        addTaskSection.className = 'daily-task-add-section';
+        addTaskSection.innerHTML = `
+            <h3 class="daily-task-section-title">今日だけのタスクを追加</h3>
+            <div class="task-add-form">
+                <input type="text" id="new-temporary-task" placeholder="新しいタスクを入力..." class="task-add-input">
+                <button id="add-temporary-task-btn" class="task-add-btn">
+                    <i class="fas fa-plus"></i> 追加
+                </button>
+            </div>
+        `;
+        tasksContainer.appendChild(addTaskSection);
+        
+        // 今日だけのタスクを表示
+        if (temporaryTasks.length > 0) {
+            const temporarySection = document.createElement('div');
+            temporarySection.className = 'daily-task-section temporary-tasks';
+            temporarySection.innerHTML = `
+                <h3 class="daily-task-section-title">今日だけのタスク</h3>
+                <div class="daily-task-list temporary-task-list"></div>
+            `;
+            tasksContainer.appendChild(temporarySection);
+            
+            const temporaryList = temporarySection.querySelector('.temporary-task-list');
+            renderTaskList(temporaryList, temporaryTasks);
         }
+        
+        // 区切り線を追加
+        const divider = document.createElement('div');
+        divider.className = 'task-section-divider';
+        tasksContainer.appendChild(divider);
+        
+        // 毎日のタスクを表示
+        if (recurringTasks.length > 0) {
+            const recurringSection = document.createElement('div');
+            recurringSection.className = 'daily-task-section recurring-tasks';
+            recurringSection.innerHTML = `
+                <h3 class="daily-task-section-title">事業の毎日のタスク</h3>
+                <div class="daily-task-list recurring-task-list"></div>
+            `;
+            tasksContainer.appendChild(recurringSection);
+            
+            const recurringList = recurringSection.querySelector('.recurring-task-list');
+            renderTaskList(recurringList, recurringTasks);
+        } else {
+            const emptySection = document.createElement('div');
+            emptySection.className = 'daily-task-section';
+            emptySection.innerHTML = `
+                <h3 class="daily-task-section-title">事業の毎日のタスク</h3>
+                <div class="empty-list-message">毎日のタスクはありません</div>
+            `;
+            tasksContainer.appendChild(emptySection);
+        }
+        
+        // 一時的なタスク追加ボタンのイベントリスナーを設定
+        document.getElementById('add-temporary-task-btn').addEventListener('click', addTemporaryTask);
+        
+        // Enter キーでも追加できるようにする
+        document.getElementById('new-temporary-task').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTemporaryTask();
+            }
+        });
         
         // タスク完了状況を更新
         updateTaskCompletion();
@@ -1256,6 +1367,90 @@ document.addEventListener('DOMContentLoaded', function() {
                 filterTasks(filter);
             });
         });
+    }
+    
+    // タスクリストをレンダリングする共通関数
+    function renderTaskList(container, tasks) {
+        tasks.forEach(task => {
+            const taskItem = document.createElement('div');
+            taskItem.className = `task-item ${task.completed ? 'task-completed' : ''}`;
+            taskItem.dataset.id = task.id;
+            
+            let activityInfo = '';
+            if (task.activityName) {
+                activityInfo = `<div class="task-activity">${task.activityName}</div>`;
+            }
+            
+            taskItem.innerHTML = `
+                <div class="task-checkbox-wrapper">
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                </div>
+                <div class="task-content">
+                    <div class="task-name">${task.name}</div>
+                    ${activityInfo}
+                </div>
+                <button class="task-delete-btn" title="削除">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            
+            container.appendChild(taskItem);
+            
+            // チェックボックスのイベントリスナーを設定
+            const checkbox = taskItem.querySelector('.task-checkbox');
+            checkbox.addEventListener('change', () => {
+                task.completed = checkbox.checked;
+                taskItem.classList.toggle('task-completed', checkbox.checked);
+                updateTaskCompletion();
+                saveData();
+            });
+            
+            // 削除ボタンのイベントリスナーを設定
+            const deleteBtn = taskItem.querySelector('.task-delete-btn');
+            deleteBtn.addEventListener('click', () => {
+                deleteTask(task.id);
+                taskItem.remove();
+                updateTaskCompletion();
+            });
+        });
+    }
+    
+    // 一時的なタスクを追加する関数
+    function addTemporaryTask() {
+        const taskInput = document.getElementById('new-temporary-task');
+        const taskText = taskInput.value.trim();
+        
+        if (taskText) {
+            const today = getCurrentDate();
+            const newTask = {
+                id: generateId(),
+                name: taskText,
+                completed: false,
+                isRecurring: false
+            };
+            
+            if (!state.dailyTasks[today]) {
+                state.dailyTasks[today] = [];
+            }
+            
+            state.dailyTasks[today].push(newTask);
+            saveData();
+            
+            // 入力フィールドをクリア
+            taskInput.value = '';
+            
+            // 表示を更新
+            renderDailyTasks();
+        }
+    }
+    
+    // タスクを削除する関数
+    function deleteTask(taskId) {
+        const today = getCurrentDate();
+        if (state.dailyTasks[today]) {
+            state.dailyTasks[today] = state.dailyTasks[today].filter(task => task.id !== taskId);
+            saveData();
+        }
     }
 
     // タスク完了状況を更新する関数
@@ -1363,18 +1558,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 activity.dailyTasks.push(taskText);
                 
-                // 今日のタスクが存在する場合のみ追加
-                if (taskText && taskText.trim() !== '') {
+                // 今日のタスクにも追加
+                if (taskText && !activity.completed) {
                     const today = getCurrentDate();
-                    if (state.dailyTasks[today]) {
-                        state.dailyTasks[today].push({
-                            id: generateId(),
-                            activityId: activity.id,
-                            activityName: activity.name,
-                            name: taskText,
-                            completed: false
-                        });
+                    if (!state.dailyTasks[today]) {
+                        state.dailyTasks[today] = [];
                     }
+                    
+                    state.dailyTasks[today].push({
+                        id: generateId(),
+                        activityId: activity.id,
+                        activityName: activity.name,
+                        name: taskText,
+                        completed: false,
+                        isRecurring: true
+                    });
                 }
                 break;
                 
@@ -1700,21 +1898,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 state.activities[activityIndex] = updatedActivity;
                 
-                // 今日のタスクも更新（タスクがある場合のみ）
-                if (dailyTasks && dailyTasks.length > 0) {
-                    const today = getCurrentDate();
-                    if (state.dailyTasks[today]) {
-                        // 古いタスクを削除
-                        state.dailyTasks[today] = state.dailyTasks[today].filter(task => task.activityId !== oldActivity.id);
-                        
-                        // 新しいタスクを追加
+                // 今日のタスクも更新
+                const today = getCurrentDate();
+                if (state.dailyTasks[today]) {
+                    // 古いタスクを削除（定期的なタスクのみ）
+                    state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
+                        task.activityId !== oldActivity.id || !task.isRecurring
+                    );
+                    
+                    // 新しいタスクを追加（定期的なタスク）
+                    if (!updatedActivity.completed) {
                         dailyTasks.forEach(task => {
                             state.dailyTasks[today].push({
                                 id: generateId(),
                                 activityId: oldActivity.id,
                                 activityName: name,
                                 name: task,
-                                completed: false
+                                completed: false,
+                                isRecurring: true
                             });
                         });
                     }
@@ -1748,9 +1949,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             state.activities.push(newActivity);
             
-            // 毎日のタスクが存在する場合のみ追加
-            if (dailyTasks && dailyTasks.length > 0) {
-                // 今日のタスクに追加
+            // 毎日のタスクを今日のタスクに追加（完了していない場合のみ）
+            if (dailyTasks && dailyTasks.length > 0 && !newActivity.completed) {
                 const today = getCurrentDate();
                 if (!state.dailyTasks[today]) {
                     state.dailyTasks[today] = [];
@@ -1762,7 +1962,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         activityId: newActivity.id,
                         activityName: name,
                         name: task,
-                        completed: false
+                        completed: false,
+                        isRecurring: true
                     });
                 });
             }
