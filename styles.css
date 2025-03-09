@@ -763,7 +763,7 @@ body {
     color: var(--text-secondary);
 }
 
-/* 今日のタスク新レイアウト - 3列グリッド */
+/* 今日のタスクを3列グリッドに変更 */
 .tasks-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1043,14 +1043,6 @@ body {
     max-width: 1000px;
     margin: 0 auto;
     padding: 0 1rem;
-}
-
-/* 今日のタスクとダッシュボードページのコンテンツエリア */
-#daily-tasks-template .document-body,
-#dashboard-template .document-body {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
 }
 
 .notes-container {
