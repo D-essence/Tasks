@@ -6,8 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentActivity: null,
         dailyTasks: {},
         editMode: false,
-        editingItem: null,
-        helperToastShown: true // 初期ポップアップを表示しないようフラグを設定
+        editingItem: null
     };
 
     // 初期データのロード
@@ -394,11 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ヘルプトースト表示関数
     function showHelperToast(message, duration = 5000) {
-        // 既に表示済みならスキップ
-        if (state.helperToastShown) return;
-        
-        state.helperToastShown = true;
-        
         const toast = document.createElement('div');
         toast.className = 'helper-toast';
         toast.innerHTML = `
@@ -779,129 +773,123 @@ document.addEventListener('DOMContentLoaded', function() {
         const kpiList = document.getElementById('kpi-list');
         kpiList.innerHTML = '';
         
-        if (Array.isArray(activity.kpis)) {
-            activity.kpis.forEach((kpi, index) => {
-                const kpiItem = document.createElement('div');
-                kpiItem.className = 'detail-list-item';
-                kpiItem.dataset.index = index;
+        activity.kpis.forEach((kpi, index) => {
+            const kpiItem = document.createElement('div');
+            kpiItem.className = 'detail-list-item';
+            kpiItem.dataset.index = index;
+            
+            // KPIオブジェクトかどうかを確認
+            const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
+            const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : null;
+            const isCompleted = typeof kpi === 'object' && kpi.completed;
+            
+            let deadlineHTML = '';
+            if (kpiDeadline) {
+                const timeRemaining = getTimeRemaining(kpiDeadline);
+                deadlineHTML = `<div class="detail-item-deadline">${timeRemaining}</div>`;
+            }
+            
+            // チェックボックスを追加
+            const checkboxHTML = `
+                <div class="kpi-checkbox-wrapper">
+                    <input type="checkbox" class="kpi-checkbox" data-index="${index}" ${isCompleted ? 'checked' : ''}>
+                </div>
+            `;
+            
+            kpiItem.innerHTML = `
+                <div class="detail-item-content ${isCompleted ? 'completed-kpi' : ''}">${kpiText}</div>
+                ${deadlineHTML}
+                ${checkboxHTML}
+                <div class="detail-item-actions">
+                    <button class="detail-item-edit-btn" data-type="kpi" data-index="${index}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="detail-item-delete-btn" data-type="kpi" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            kpiList.appendChild(kpiItem);
+            
+            // KPIチェックボックスのイベントリスナーを追加
+            const checkbox = kpiItem.querySelector('.kpi-checkbox');
+            checkbox.addEventListener('change', () => {
+                // KPIの完了状態を更新
+                activity.kpis[index].completed = checkbox.checked;
                 
-                // KPIオブジェクトかどうかを確認
-                const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
-                const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : null;
-                const isCompleted = typeof kpi === 'object' && kpi.completed;
+                // 進捗度を再計算
+                activity.progress = calculateProgressFromKPIs(activity);
                 
-                let deadlineHTML = '';
-                if (kpiDeadline) {
-                    const timeRemaining = getTimeRemaining(kpiDeadline);
-                    deadlineHTML = `<div class="detail-item-deadline">${timeRemaining}</div>`;
+                // 100%の場合は完了フラグも設定
+                if (activity.progress >= 100) {
+                    activity.completed = true;
+                } else {
+                    activity.completed = false;
                 }
                 
-                // チェックボックスを追加
-                const checkboxHTML = `
-                    <div class="kpi-checkbox-wrapper">
-                        <input type="checkbox" class="kpi-checkbox" data-index="${index}" ${isCompleted ? 'checked' : ''}>
-                    </div>
-                `;
+                // UI更新
+                const kpiTextElement = kpiItem.querySelector('.detail-item-content');
+                kpiTextElement.classList.toggle('completed-kpi', checkbox.checked);
                 
-                kpiItem.innerHTML = `
-                    <div class="detail-item-content ${isCompleted ? 'completed-kpi' : ''}">${kpiText}</div>
-                    ${deadlineHTML}
-                    ${checkboxHTML}
-                    <div class="detail-item-actions">
-                        <button class="detail-item-edit-btn" data-type="kpi" data-index="${index}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="detail-item-delete-btn" data-type="kpi" data-index="${index}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
+                // 進捗バーを更新
+                updateProgressDisplay(activity);
                 
-                kpiList.appendChild(kpiItem);
-                
-                // KPIチェックボックスのイベントリスナーを追加
-                const checkbox = kpiItem.querySelector('.kpi-checkbox');
-                checkbox.addEventListener('change', () => {
-                    // KPIの完了状態を更新
-                    activity.kpis[index].completed = checkbox.checked;
-                    
-                    // 進捗度を再計算
-                    activity.progress = calculateProgressFromKPIs(activity);
-                    
-                    // 100%の場合は完了フラグも設定
-                    if (activity.progress >= 100) {
-                        activity.completed = true;
-                    } else {
-                        activity.completed = false;
-                    }
-                    
-                    // UI更新
-                    const kpiTextElement = kpiItem.querySelector('.detail-item-content');
-                    kpiTextElement.classList.toggle('completed-kpi', checkbox.checked);
-                    
-                    // 進捗バーを更新
-                    updateProgressDisplay(activity);
-                    
-                    // データを保存
-                    saveData();
-                });
+                // データを保存
+                saveData();
             });
-        }
+        });
         
         // フェーズリストをレンダリング
         const phasesList = document.getElementById('phases-list');
         phasesList.innerHTML = '';
         
-        if (Array.isArray(activity.phases)) {
-            activity.phases.forEach((phase, index) => {
-                const phaseItem = document.createElement('div');
-                phaseItem.className = 'phase-item';
-                phaseItem.dataset.index = index;
-                
-                phaseItem.innerHTML = `
-                    <div class="phase-marker">${index + 1}</div>
-                    <div class="phase-content">
-                        <div class="phase-text">${phase}</div>
-                        <div class="phase-actions">
-                            <button class="detail-item-edit-btn" data-type="phase" data-index="${index}">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="detail-item-delete-btn" data-type="phase" data-index="${index}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+        activity.phases.forEach((phase, index) => {
+            const phaseItem = document.createElement('div');
+            phaseItem.className = 'phase-item';
+            phaseItem.dataset.index = index;
+            
+            phaseItem.innerHTML = `
+                <div class="phase-marker">${index + 1}</div>
+                <div class="phase-content">
+                    <div class="phase-text">${phase}</div>
+                    <div class="phase-actions">
+                        <button class="detail-item-edit-btn" data-type="phase" data-index="${index}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="detail-item-delete-btn" data-type="phase" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
-                `;
-                
-                phasesList.appendChild(phaseItem);
-            });
-        }
+                </div>
+            `;
+            
+            phasesList.appendChild(phaseItem);
+        });
         
         // 毎日のタスクリストをレンダリング
         const tasksList = document.getElementById('daily-tasks-list');
         tasksList.innerHTML = '';
         
-        if (Array.isArray(activity.dailyTasks) && activity.dailyTasks.length > 0) {
-            activity.dailyTasks.forEach((task, index) => {
-                const taskItem = document.createElement('div');
-                taskItem.className = 'detail-list-item';
-                taskItem.dataset.index = index;
-                
-                taskItem.innerHTML = `
-                    <div class="detail-item-content">${task}</div>
-                    <div class="detail-item-actions">
-                        <button class="detail-item-edit-btn" data-type="task" data-index="${index}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="detail-item-delete-btn" data-type="task" data-index="${index}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-                
-                tasksList.appendChild(taskItem);
-            });
-        }
+        activity.dailyTasks.forEach((task, index) => {
+            const taskItem = document.createElement('div');
+            taskItem.className = 'detail-list-item';
+            taskItem.dataset.index = index;
+            
+            taskItem.innerHTML = `
+                <div class="detail-item-content">${task}</div>
+                <div class="detail-item-actions">
+                    <button class="detail-item-edit-btn" data-type="task" data-index="${index}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="detail-item-delete-btn" data-type="task" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            tasksList.appendChild(taskItem);
+        });
         
         // 備考欄を更新
         const notesEditor = document.getElementById('notes-editor');
@@ -1338,6 +1326,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const activity = getActivityById(state.currentActivity);
         if (!activity) return;
         
+        let newItem;
+        let itemsArray;
+        
         switch (type) {
             case 'kpi':
                 // プロンプトダイアログでKPIのテキストを取得
@@ -1360,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.body.removeChild(this);
                     
                     if (selectedDate && isValidDate(selectedDate)) {
-                        const newItem = { text: kpiText, deadline: selectedDate, completed: false };
+                        newItem = { text: kpiText, deadline: selectedDate, completed: false };
                         activity.kpis.push(newItem);
                         saveData();
                         renderActivityDetail();
@@ -1387,9 +1378,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const taskText = prompt('新しいタスクを入力してください:');
                 if (!taskText || taskText.trim() === '') return;
                 
-                if (!activity.dailyTasks) {
-                    activity.dailyTasks = [];
-                }
                 activity.dailyTasks.push(taskText);
                 
                 // 今日のタスクが存在する場合のみ追加
@@ -1440,94 +1428,75 @@ document.addEventListener('DOMContentLoaded', function() {
         const kpiInputs = document.getElementById('kpi-inputs');
         kpiInputs.innerHTML = '';
         
-        if (Array.isArray(activity.kpis)) {
-            activity.kpis.forEach((kpi, index) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group kpi-input-group';
-                
-                // KPIがオブジェクトかどうかを確認
-                const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
-                const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : getFutureDateString(10);
-                
-                inputGroup.innerHTML = `
-                    <input type="text" class="kpi-input" placeholder="KPI" value="${kpiText}" required>
-                    <input type="date" class="kpi-date-input" value="${kpiDeadline}" required>
-                    ${index === 0 ? 
-                        `<button type="button" class="add-item-btn kpi-add-btn">
-                            <i class="fas fa-plus"></i>
-                        </button>` :
-                        `<button type="button" class="remove-item-btn kpi-remove-btn">
-                            <i class="fas fa-minus"></i>
-                        </button>`
-                    }
-                `;
-                
-                kpiInputs.appendChild(inputGroup);
-            });
-        }
+        activity.kpis.forEach((kpi, index) => {
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group kpi-input-group';
+            
+            // KPIがオブジェクトかどうかを確認
+            const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
+            const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : getFutureDateString(10);
+            
+            inputGroup.innerHTML = `
+                <input type="text" class="kpi-input" placeholder="KPI" value="${kpiText}" required>
+                <input type="date" class="kpi-date-input" value="${kpiDeadline}" required>
+                ${index === 0 ? 
+                    `<button type="button" class="add-item-btn kpi-add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>` :
+                    `<button type="button" class="remove-item-btn kpi-remove-btn">
+                        <i class="fas fa-minus"></i>
+                    </button>`
+                }
+            `;
+            
+            kpiInputs.appendChild(inputGroup);
+        });
         
         // フェーズの入力フィールドを作成
         const phaseInputs = document.getElementById('phase-inputs');
         phaseInputs.innerHTML = '';
         
-        if (Array.isArray(activity.phases)) {
-            activity.phases.forEach((phase, index) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                
-                inputGroup.innerHTML = `
-                    <input type="text" class="phase-input" placeholder="フェーズ" value="${phase}" required>
-                    ${index === 0 ? 
-                        `<button type="button" class="add-item-btn phase-add-btn">
-                            <i class="fas fa-plus"></i>
-                        </button>` :
-                        `<button type="button" class="remove-item-btn phase-remove-btn">
-                            <i class="fas fa-minus"></i>
-                        </button>`
-                    }
-                `;
-                
-                phaseInputs.appendChild(inputGroup);
-            });
-        }
+        activity.phases.forEach((phase, index) => {
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            
+            inputGroup.innerHTML = `
+                <input type="text" class="phase-input" placeholder="フェーズ" value="${phase}" required>
+                ${index === 0 ? 
+                    `<button type="button" class="add-item-btn phase-add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>` :
+                    `<button type="button" class="remove-item-btn phase-remove-btn">
+                        <i class="fas fa-minus"></i>
+                    </button>`
+                }
+            `;
+            
+            phaseInputs.appendChild(inputGroup);
+        });
         
         // 毎日のタスクの入力フィールドを作成
         const taskInputs = document.getElementById('task-inputs');
         taskInputs.innerHTML = '';
         
-        if (Array.isArray(activity.dailyTasks) && activity.dailyTasks.length > 0) {
-            activity.dailyTasks.forEach((task, index) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                
-                inputGroup.innerHTML = `
-                    <input type="text" class="task-input" placeholder="タスク" value="${task}">
-                    ${index === 0 ? 
-                        `<button type="button" class="add-item-btn task-add-btn">
-                            <i class="fas fa-plus"></i>
-                        </button>` :
-                        `<button type="button" class="remove-item-btn task-remove-btn">
-                            <i class="fas fa-minus"></i>
-                        </button>`
-                    }
-                `;
-                
-                taskInputs.appendChild(inputGroup);
-            });
-        } else {
-            // タスクがない場合は空のフィールドを1つ作成
+        activity.dailyTasks.forEach((task, index) => {
             const inputGroup = document.createElement('div');
             inputGroup.className = 'input-group';
             
             inputGroup.innerHTML = `
-                <input type="text" class="task-input" placeholder="タスク">
-                <button type="button" class="add-item-btn task-add-btn">
-                    <i class="fas fa-plus"></i>
-                </button>
+                <input type="text" class="task-input" placeholder="タスク" value="${task}" required>
+                ${index === 0 ? 
+                    `<button type="button" class="add-item-btn task-add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>` :
+                    `<button type="button" class="remove-item-btn task-remove-btn">
+                        <i class="fas fa-minus"></i>
+                    </button>`
+                }
             `;
             
             taskInputs.appendChild(inputGroup);
-        }
+        });
         
         // 各入力フィールドの追加・削除ボタンにイベントリスナーを設定
         setupDynamicInputListeners();
@@ -1573,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 入力フィールドを追加する関数
+    // 動的な入力フィールドを追加する関数
     function addInputField(type) {
         const container = document.getElementById(`${type}-inputs`);
         const inputGroup = document.createElement('div');
@@ -1590,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             inputGroup.className = 'input-group';
             inputGroup.innerHTML = `
-                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}" ${type !== 'task' ? 'required' : ''}>
+                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}">
                 <button type="button" class="remove-item-btn ${type}-remove-btn">
                     <i class="fas fa-minus"></i>
                 </button>
@@ -1728,7 +1697,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     notes: oldActivity.notes || '',
                     kpis: mergedKpis,
                     phases,
-                    dailyTasks: dailyTasks || []
+                    dailyTasks
                 };
                 
                 state.activities[activityIndex] = updatedActivity;
