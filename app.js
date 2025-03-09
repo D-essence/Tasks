@@ -244,19 +244,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const today = new Date().toISOString().split('T')[0];
         
         initialActivities.forEach(activity => {
-            activity.dailyTasks.forEach(task => {
-                const taskId = generateId();
-                if (!initialDailyTasks[today]) {
-                    initialDailyTasks[today] = [];
-                }
-                initialDailyTasks[today].push({
-                    id: taskId,
-                    activityId: activity.id,
-                    activityName: activity.name,
-                    name: task,
-                    completed: false
+            if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+                activity.dailyTasks.forEach(task => {
+                    const taskId = generateId();
+                    if (!initialDailyTasks[today]) {
+                        initialDailyTasks[today] = [];
+                    }
+                    initialDailyTasks[today].push({
+                        id: taskId,
+                        activityId: activity.id,
+                        activityName: activity.name,
+                        name: task,
+                        completed: false
+                    });
                 });
-            });
+            }
         });
 
         return {
@@ -371,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // URLのハッシュをチェックしてスクロール
         setTimeout(checkUrlHashAndScroll, 500);
         
-        // ヘルプトーストを表示しない
+        // ヘルプトーストは表示しない
     }
     
     // URLハッシュを確認してスクロールする関数
@@ -393,42 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ヘルプトースト表示関数
     function showHelperToast(message, duration = 5000) {
-        const toast = document.createElement('div');
-        toast.className = 'helper-toast';
-        toast.innerHTML = `
-            <div class="toast-content">
-                <i class="fas fa-info-circle"></i>
-                <span>${message}</span>
-            </div>
-            <button class="toast-close"><i class="fas fa-times"></i></button>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // 閉じるボタンのイベント
-        toast.querySelector('.toast-close').addEventListener('click', () => {
-            toast.classList.add('toast-hiding');
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
-                }
-            }, 300);
-        });
-        
-        // 一定時間後に自動で消える
-        setTimeout(() => {
-            toast.classList.add('toast-hiding');
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
-                }
-            }, 300);
-        }, duration);
-        
-        // アニメーション
-        setTimeout(() => {
-            toast.classList.add('toast-visible');
-        }, 10);
+        // 完全に非表示にするため、関数は空にしておく
     }
     
     // KPIのフォーマットを変換する関数
@@ -871,25 +838,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const tasksList = document.getElementById('daily-tasks-list');
         tasksList.innerHTML = '';
         
-        activity.dailyTasks.forEach((task, index) => {
-            const taskItem = document.createElement('div');
-            taskItem.className = 'detail-list-item';
-            taskItem.dataset.index = index;
-            
-            taskItem.innerHTML = `
-                <div class="detail-item-content">${task}</div>
-                <div class="detail-item-actions">
-                    <button class="detail-item-edit-btn" data-type="task" data-index="${index}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="detail-item-delete-btn" data-type="task" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            
-            tasksList.appendChild(taskItem);
-        });
+        if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+            activity.dailyTasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'detail-list-item';
+                taskItem.dataset.index = index;
+                
+                taskItem.innerHTML = `
+                    <div class="detail-item-content">${task}</div>
+                    <div class="detail-item-actions">
+                        <button class="detail-item-edit-btn" data-type="task" data-index="${index}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="detail-item-delete-btn" data-type="task" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                tasksList.appendChild(taskItem);
+            });
+        } else {
+            // タスクがない場合のメッセージ
+            tasksList.innerHTML = '<div class="empty-list-message">毎日のタスクはありません</div>';
+        }
         
         // 備考欄を更新
         const notesEditor = document.getElementById('notes-editor');
@@ -1241,30 +1213,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // タスクをレンダリング
-        sortedTasks.forEach(task => {
-            const taskItem = document.createElement('div');
-            taskItem.className = `task-item ${task.completed ? 'task-completed' : ''}`;
-            taskItem.dataset.id = task.id;
-            
-            taskItem.innerHTML = `
-                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                <div class="task-content">
-                    <div class="task-name">${task.name}</div>
-                    <div class="task-activity">${task.activityName}</div>
-                </div>
-            `;
-            
-            tasksContainer.appendChild(taskItem);
-            
-            // チェックボックスのイベントリスナーを設定
-            const checkbox = taskItem.querySelector('.task-checkbox');
-            checkbox.addEventListener('change', () => {
-                task.completed = checkbox.checked;
-                taskItem.classList.toggle('task-completed', checkbox.checked);
-                updateTaskCompletion();
-                saveData();
+        if (sortedTasks.length === 0) {
+            tasksContainer.innerHTML = '<div class="empty-list-message">今日のタスクはありません</div>';
+        } else {
+            sortedTasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = `task-item ${task.completed ? 'task-completed' : ''}`;
+                taskItem.dataset.id = task.id;
+                
+                taskItem.innerHTML = `
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                    <div class="task-content">
+                        <div class="task-name">${task.name}</div>
+                        <div class="task-activity">${task.activityName}</div>
+                    </div>
+                `;
+                
+                tasksContainer.appendChild(taskItem);
+                
+                // チェックボックスのイベントリスナーを設定
+                const checkbox = taskItem.querySelector('.task-checkbox');
+                checkbox.addEventListener('change', () => {
+                    task.completed = checkbox.checked;
+                    taskItem.classList.toggle('task-completed', checkbox.checked);
+                    updateTaskCompletion();
+                    saveData();
+                });
             });
-        });
+        }
         
         // タスク完了状況を更新
         updateTaskCompletion();
@@ -1292,8 +1268,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
         
         // カウントを更新
-        document.getElementById('total-task-count').textContent = totalTasks;
-        document.getElementById('task-completed-count').textContent = completedTasks;
+        const totalTaskCountElem = document.getElementById('total-task-count');
+        const taskCompletedCountElem = document.getElementById('task-completed-count');
+        
+        if (totalTaskCountElem) totalTaskCountElem.textContent = totalTasks;
+        if (taskCompletedCountElem) taskCompletedCountElem.textContent = completedTasks;
         
         // 進捗バーを更新
         const progressBar = document.getElementById('completion-progress-bar');
@@ -1327,7 +1306,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!activity) return;
         
         let newItem;
-        let itemsArray;
         
         switch (type) {
             case 'kpi':
@@ -1377,6 +1355,11 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'task':
                 const taskText = prompt('新しいタスクを入力してください:');
                 if (!taskText || taskText.trim() === '') return;
+                
+                // 毎日のタスク配列が存在しない場合は作成
+                if (!activity.dailyTasks) {
+                    activity.dailyTasks = [];
+                }
                 
                 activity.dailyTasks.push(taskText);
                 
@@ -1461,7 +1444,7 @@ document.addEventListener('DOMContentLoaded', function() {
             inputGroup.className = 'input-group';
             
             inputGroup.innerHTML = `
-                <input type="text" class="phase-input" placeholder="フェーズ" value="${phase}" required>
+                <input type="text" class="phase-input" placeholder="フェーズ" value="${phase}">
                 ${index === 0 ? 
                     `<button type="button" class="add-item-btn phase-add-btn">
                         <i class="fas fa-plus"></i>
@@ -1479,24 +1462,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const taskInputs = document.getElementById('task-inputs');
         taskInputs.innerHTML = '';
         
-        activity.dailyTasks.forEach((task, index) => {
+        if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+            activity.dailyTasks.forEach((task, index) => {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'input-group';
+                
+                inputGroup.innerHTML = `
+                    <input type="text" class="task-input" placeholder="タスク" value="${task}">
+                    ${index === 0 ? 
+                        `<button type="button" class="add-item-btn task-add-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>` :
+                        `<button type="button" class="remove-item-btn task-remove-btn">
+                            <i class="fas fa-minus"></i>
+                        </button>`
+                    }
+                `;
+                
+                taskInputs.appendChild(inputGroup);
+            });
+        } else {
+            // タスクがない場合は空の入力フィールドを表示
             const inputGroup = document.createElement('div');
             inputGroup.className = 'input-group';
             
             inputGroup.innerHTML = `
-                <input type="text" class="task-input" placeholder="タスク" value="${task}" required>
-                ${index === 0 ? 
-                    `<button type="button" class="add-item-btn task-add-btn">
-                        <i class="fas fa-plus"></i>
-                    </button>` :
-                    `<button type="button" class="remove-item-btn task-remove-btn">
-                        <i class="fas fa-minus"></i>
-                    </button>`
-                }
+                <input type="text" class="task-input" placeholder="タスク">
+                <button type="button" class="add-item-btn task-add-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
             `;
             
             taskInputs.appendChild(inputGroup);
-        });
+        }
         
         // 各入力フィールドの追加・削除ボタンにイベントリスナーを設定
         setupDynamicInputListeners();
@@ -1697,7 +1695,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     notes: oldActivity.notes || '',
                     kpis: mergedKpis,
                     phases,
-                    dailyTasks
+                    dailyTasks: dailyTasks || [] // タスクがなければ空の配列に
                 };
                 
                 state.activities[activityIndex] = updatedActivity;
@@ -1720,7 +1718,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                         });
                     }
-                }
                 }
                 
                 saveData();
@@ -1746,26 +1743,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 notes: '',
                 kpis,
                 phases,
-                dailyTasks
+                dailyTasks: dailyTasks || [] // 毎日のタスクが無い場合は空配列に
             };
             
             state.activities.push(newActivity);
             
-            // 今日のタスクに追加
-            const today = getCurrentDate();
-            if (!state.dailyTasks[today]) {
-                state.dailyTasks[today] = [];
-            }
-            
-            dailyTasks.forEach(task => {
-                state.dailyTasks[today].push({
-                    id: generateId(),
-                    activityId: newActivity.id,
-                    activityName: name,
-                    name: task,
-                    completed: false
+            // 毎日のタスクが存在する場合のみ追加
+            if (dailyTasks && dailyTasks.length > 0) {
+                // 今日のタスクに追加
+                const today = getCurrentDate();
+                if (!state.dailyTasks[today]) {
+                    state.dailyTasks[today] = [];
+                }
+                
+                dailyTasks.forEach(task => {
+                    state.dailyTasks[today].push({
+                        id: generateId(),
+                        activityId: newActivity.id,
+                        activityName: name,
+                        name: task,
+                        completed: false
+                    });
                 });
-            });
+            }
             
             saveData();
             state.currentActivity = newActivity.id;
