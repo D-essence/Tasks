@@ -55,6 +55,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    width: 100%; /* Ensure full width up to max-width */
 }
 
 .document-header {
@@ -125,6 +126,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+    width: 100%; /* Ensure full width */
 }
 
 .nav-title {
@@ -169,11 +171,13 @@ body {
 .document-body {
     padding: 2rem;
     flex: 1;
+    width: 100%; /* Ensure full width */
 }
 
 .document-section {
     margin-bottom: var(--section-space);
     scroll-margin-top: 100px; /* スクロール時にヘッダーに隠れないようにするマージン */
+    width: 100%; /* Ensure sections use full width */
 }
 
 .section-title {
@@ -429,6 +433,7 @@ body {
 
 .legend {
     display: flex;
+    flex-wrap: wrap; /* Ensure legend can wrap on smaller screens */
     gap: 1.5rem;
     margin: 2rem 0;
     padding: 1rem;
@@ -482,6 +487,7 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 0.8rem;
+    width: 100%; /* Ensure full width */
 }
 
 .footer-copyright {
@@ -496,6 +502,7 @@ body {
 .detail-content {
     max-width: 800px;
     margin: 0 auto;
+    width: 100%; /* Use full available width */
 }
 
 .detail-progress-container {
@@ -505,6 +512,7 @@ body {
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
+    width: 100%; /* Ensure full width */
 }
 
 .detail-progress-wrapper {
@@ -529,6 +537,7 @@ body {
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
+    width: 100%; /* Ensure full width */
 }
 
 .detail-section-header {
@@ -548,6 +557,7 @@ body {
 
 .detail-list {
     list-style: none;
+    width: 100%; /* Ensure full width */
 }
 
 .detail-list-item {
@@ -645,6 +655,7 @@ body {
 
 .phases-container {
     position: relative;
+    width: 100%; /* Ensure full width */
 }
 
 .phase-item {
@@ -735,6 +746,7 @@ body {
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
+    width: 100%; /* Ensure full width */
 }
 
 .completion-progress {
@@ -764,6 +776,10 @@ body {
 }
 
 /* 今日のタスクのスタイル更新 */
+.tasks-container {
+    width: 100%; /* Ensure full width */
+}
+
 .daily-task-section {
     background-color: white;
     border: 1px solid var(--border-color);
@@ -771,6 +787,7 @@ body {
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
+    width: 100%; /* Ensure full width */
 }
 
 .daily-task-section-title {
@@ -798,6 +815,7 @@ body {
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
+    width: 100%; /* Ensure full width */
 }
 
 .task-add-form {
@@ -844,6 +862,7 @@ body {
     background-color: var(--border-color);
     margin: 2rem 0;
     position: relative;
+    width: 100%; /* Ensure full width */
 }
 
 .task-section-divider::before {
@@ -860,8 +879,9 @@ body {
 
 .daily-task-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Slightly wider columns for better use of space */
     gap: 1rem;
+    width: 100%; /* Ensure full width */
 }
 
 .temporary-tasks .task-item {
@@ -972,10 +992,12 @@ body {
 .activity-form {
     max-width: 800px;
     margin: 0 auto;
+    width: 100%; /* Ensure form uses available width */
 }
 
 .form-group {
     margin-bottom: 1.5rem;
+    width: 100%; /* Ensure form groups use full width */
 }
 
 .form-group label {
@@ -1014,11 +1036,13 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
+    width: a100%; /* Ensure inputs use full width */
 }
 
 .input-group {
     display: flex;
     gap: 0.5rem;
+    width: 100%; /* Ensure input groups use full width */
 }
 
 .input-group input {
@@ -1169,6 +1193,7 @@ body {
 .notes-container {
     position: relative;
     margin-bottom: 1rem;
+    width: 100%; /* Ensure full width */
 }
 
 .notes-editor {
@@ -1266,6 +1291,7 @@ body {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
+    width: 100%; /* Ensure dashboard uses full width */
 }
 
 .dashboard-card {
@@ -1275,6 +1301,7 @@ body {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
+    height: 100%; /* Make all cards same height */
 }
 
 .dashboard-card-title {
@@ -1371,6 +1398,7 @@ body {
     flex: 1;
     overflow-y: auto;
     max-height: 300px;
+    width: 100%; /* Ensure lists use full width */
 }
 
 .upcoming-kpi-item,
@@ -1379,11 +1407,20 @@ body {
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
+    width: 100%; /* Ensure items use full width */
 }
 
 .upcoming-kpi-item:last-child,
 .activity-item:last-child {
     border-bottom: none;
+}
+
+.upcoming-kpi-content {
+    flex: 1;
+}
+
+.upcoming-kpi-text {
+    font-weight: 500;
 }
 
 .upcoming-kpi-activity {
@@ -1422,7 +1459,7 @@ body {
     font-weight: 500;
 }
 
-.activity-item-timestamp {
+.activity-item-progress {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin-top: 0.2rem;
