@@ -1542,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 動的な入力フィールドを追加する関数
+    // 入力フィールドを追加する関数
     function addInputField(type) {
         const container = document.getElementById(`${type}-inputs`);
         const inputGroup = document.createElement('div');
@@ -1559,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             inputGroup.className = 'input-group';
             inputGroup.innerHTML = `
-                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}">
+                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}" required>
                 <button type="button" class="remove-item-btn ${type}-remove-btn">
                     <i class="fas fa-minus"></i>
                 </button>
