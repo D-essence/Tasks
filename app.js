@@ -1,311 +1,4 @@
-// ダッシュボードのデータをレンダリングする関数
-    function renderDashboard() {
-        updateLastUpdated();
-        updateCurrentDate();
-        
-        // 全ての事業をステータスで分類
-        const plannedActivities = state.activities.filter(a => a.progress < 20 && !a.completed);
-        const inProgressActivities = state.activities.filter(a => a.progress >= 20 && a.progress < 100 && !a.completed);
-        const completedActivities = state.activities.filter(a => a.progress >= 100 || a.completed);
-        const totalActivities = state.activities.length;
-        
-        // KPIの集計
-        let completedKPIs = 0;
-        let pendingKPIs = 0;
-        state.activities.forEach(activity => {
-            if (Array.isArray(activity.kpis)) {
-                activity.kpis.forEach(kpi => {
-                    if (typeof kpi === 'object' && kpi !== null && kpi.completed) {
-                        completedKPIs++;
-                    } else {
-                        pendingKPIs++;
-                    }
-                });
-            }
-        });
-        const totalKPIs = completedKPIs + pendingKPIs;
-        
-        // タイムライン別の事業数と進捗
-        const shortTermActivities = state.activities.filter(a => a.timeline === 'short-term');
-        const mediumTermActivities = state.activities.filter(a => a.timeline === 'medium-term');
-        const longTermActivities = state.activities.filter(a => a.timeline === 'long-term');
-        
-        const shortTermProgress = shortTermActivities.length > 0 ? 
-            Math.round(shortTermActivities.reduce((acc, a) => acc + a.progress, 0) / shortTermActivities.length) : 0;
-        const mediumTermProgress = mediumTermActivities.length > 0 ? 
-            Math.round(mediumTermActivities.reduce((acc, a) => acc + a.progress, 0) / mediumTermActivities.length) : 0;
-        const longTermProgress = longTermActivities.length > 0 ? 
-            Math.round(longTermActivities.reduce((acc, a) => acc + a.progress, 0) / longTermActivities.length) : 0;
-        
-        // 今日のタスク完了状況
-        const today = getCurrentDate();
-        const todayTasks = state.dailyTasks[today] || [];
-        const completedTasks = todayTasks.filter(task => task.completed).length;
-        const pendingTasks = todayTasks.length - completedTasks;
-        
-        // 期限が近いKPI（7日以内）
-        const upcomingKPIs = [];
-        state.activities.forEach(activity => {
-            if (Array.isArray(activity.kpis)) {
-                activity.kpis.forEach(kpi => {
-                    if (typeof kpi === 'object' && kpi !== null && kpi.deadline && !kpi.completed) {
-                        const deadline = new Date(kpi.deadline);
-                        const today = new Date();
-                        const diffTime = deadline.getTime() - today.getTime();
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        
-                        if (diffDays >= 0 && diffDays <= 7) {
-                            upcomingKPIs.push({
-                                text: kpi.text,
-                                deadline: kpi.deadline,
-                                diffDays: diffDays,
-                                activity: activity.name
-                            });
-                        }
-                    }
-                });
-            }
-        });
-        
-        // 期限が近い順にソート
-        upcomingKPIs.sort((a, b) => a.diffDays - b.diffDays);
-        
-        // 表示をアップデート
-        document.getElementById('planned-count').textContent = plannedActivities.length;
-        document.getElementById('progress-count').textContent = inProgressActivities.length;
-        document.getElementById('complete-count').textContent = completedActivities.length;
-        document.getElementById('total-activities-count').textContent = totalActivities;
-        
-        document.getElementById('completed-kpi-count').textContent = completedKPIs;
-        document.getElementById('pending-kpi-count').textContent = pendingKPIs;
-        document.getElementById('total-kpi-count').textContent = totalKPIs;
-        
-        document.getElementById('completed-tasks-count').textContent = completedTasks;
-        document.getElementById('pending-tasks-count').textContent = pendingTasks;
-        document.getElementById('total-tasks-count').textContent = todayTasks.length;
-        
-        // 期限が近いKPIリストを表示
-        const upcomingKpiList = document.getElementById('upcoming-kpi-list');
-        upcomingKpiList.innerHTML = '';
-        
-        if (upcomingKPIs.length === 0) {
-            upcomingKpiList.innerHTML = '<div class="empty-list-message">期限が近いKPIはありません</div>';
-        } else {
-            upcomingKPIs.slice(0, 5).forEach(kpi => {
-                const deadlineDate = new Date(kpi.deadline);
-                const formattedDate = `${deadlineDate.getMonth() + 1}/${deadlineDate.getDate()}`;
-                
-                const kpiItem = document.createElement('div');
-                kpiItem.className = 'upcoming-kpi-item';
-                kpiItem.innerHTML = `
-                    <div class="upcoming-kpi-content">
-                        <div class="upcoming-kpi-text">${kpi.text}</div>
-                        <div class="upcoming-kpi-activity">${kpi.activity}</div>
-                    </div>
-                    <div class="upcoming-kpi-deadline">残り ${kpi.diffDays} 日 (${formattedDate})</div>
-                `;
-                upcomingKpiList.appendChild(kpiItem);
-            });
-        }
-        
-        // 最近の活動リストを表示（例として進捗率の高い事業を表示）
-        const recentActivitiesList = document.getElementById('recent-activities-list');
-        recentActivitiesList.innerHTML = '';
-        
-        const sortedByProgress = [...state.activities].sort((a, b) => b.progress - a.progress);
-        
-        if (sortedByProgress.length === 0) {
-            recentActivitiesList.innerHTML = '<div class="empty-list-message">アクティブな事業はありません</div>';
-        } else {
-            sortedByProgress.slice(0, 5).forEach(activity => {
-                const activityItem = document.createElement('div');
-                activityItem.className = 'activity-item';
-                activityItem.innerHTML = `
-                    <div class="activity-item-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="activity-item-content">
-                        <div class="activity-item-title">${activity.name}</div>
-                        <div class="activity-item-progress">進捗度: ${activity.progress}%</div>
-                    </div>
-                `;
-                recentActivitiesList.appendChild(activityItem);
-            });
-        }
-        
-        // グラフの描画
-        renderDashboardCharts(
-            [plannedActivities.length, inProgressActivities.length, completedActivities.length],
-            [completedKPIs, pendingKPIs],
-            [
-                { label: '短期', count: shortTermActivities.length, progress: shortTermProgress },
-                { label: '中期', count: mediumTermActivities.length, progress: mediumTermProgress },
-                { label: '長期', count: longTermActivities.length, progress: longTermProgress }
-            ],
-            [completedTasks, pendingTasks]
-        );
-    }
-    
-    // ダッシュボードのグラフを描画する関数
-    function renderDashboardCharts(progressData, kpiData, timelineData, taskData) {
-        // 全体進捗状況のパイチャート
-        const progressPieCtx = document.getElementById('progress-pie-chart').getContext('2d');
-        const progressPieChart = new Chart(progressPieCtx, {
-            type: 'pie',
-            data: {
-                labels: ['計画済み', '進行中', '完了'],
-                datasets: [{
-                    data: progressData,
-                    backgroundColor: ['#f1c40f', '#3498db', '#2ecc71'],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-        
-        // KPI達成状況のパイチャート
-        const kpiPieCtx = document.getElementById('kpi-pie-chart').getContext('2d');
-        const kpiPieChart = new Chart(kpiPieCtx, {
-            type: 'pie',
-            data: {
-                labels: ['達成済み', '未達成'],
-                datasets: [{
-                    data: kpiData,
-                    backgroundColor: ['#2ecc71', '#e74c3c'],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-        
-        // タイムライン別進捗の棒グラフ
-        const timelineBarCtx = document.getElementById('timeline-bar-chart').getContext('2d');
-        const timelineBarChart = new Chart(timelineBarCtx, {
-            type: 'bar',
-            data: {
-                labels: timelineData.map(item => item.label),
-                datasets: [
-                    {
-                        label: '事業数',
-                        data: timelineData.map(item => item.count),
-                        backgroundColor: '#3498db',
-                        borderWidth: 1,
-                        order: 2
-                    },
-                    {
-                        label: '平均進捗率 (%)',
-                        data: timelineData.map(item => item.progress),
-                        type: 'line',
-                        borderColor: '#e74c3c',
-                        pointBackgroundColor: '#e74c3c',
-                        tension: 0.1,
-                        order: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    }
-                }
-            }
-        });
-        
-        // タスク完了率のドーナツチャート
-        const taskDoughnutCtx = document.getElementById('task-doughnut-chart').getContext('2d');
-        const taskDoughnutChart = new Chart(taskDoughnutCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['完了', '未完了'],
-                datasets: [{
-                    data: taskData,
-                    backgroundColor: ['#2ecc71', '#e74c3c'],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                cutout: '70%'
-            }
-        });
-    }            // 一時的な対応として、ボタンを非表示にするためのスタイルを追加
-            const style = document.createElement('style');
-            style.textContent = `
-                .detail-item-edit-btn, .detail-item-delete-btn { 
-                    display: none !important; 
-                }
-            `;
-            document.head.appendChild(style);    // KPIの完了状態に基づいて進捗度を計算する関数
-    function calculateProgressFromKPIs(activity) {
-        if (!activity || !Array.isArray(activity.kpis) || activity.kpis.length === 0) {
-            return activity.progress || 0; // KPIがなければ現在の進捗度を返す
-        }
-        
-        const totalKPIs = activity.kpis.length;
-        const completedKPIs = activity.kpis.filter(kpi => 
-            typeof kpi === 'object' && kpi !== null && kpi.completed
-        ).length;
-        
-        // 進捗率を計算して四捨五入
-        const progress = Math.round((completedKPIs / totalKPIs) * 100);
-        
-        return progress;
-    }    // KPIの残り時間を計算する関数
-    function getTimeRemaining(deadlineDate) {
-        const now = new Date();
-        const deadline = new Date(deadlineDate);
-        deadline.setHours(23, 59, 59, 999); // 終日設定
-        
-        const diffMs = deadline - now;
-        
-        if (diffMs <= 0) {
-            return '期限切れ';
-        }
-        
-        // 同じ日の場合は時間と分で表示
-        if (now.getDate() === deadline.getDate() && 
-            now.getMonth() === deadline.getMonth() && 
-            now.getFullYear() === deadline.getFullYear()) {
-            
-            const hours = Math.floor(diffMs / (1000 * 60 * 60));
-            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            return `残り ${hours}時間 ${minutes}分`;
-        }
-        
-        // それ以外は日数で表示
-        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-        return `残り ${days}日`;
-    }document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     // アプリケーションの状態
     const state = {
         currentPage: 'home',
@@ -1022,6 +715,50 @@
         });
     }
 
+    // KPIの完了状態に基づいて進捗度を計算する関数
+    function calculateProgressFromKPIs(activity) {
+        if (!activity || !Array.isArray(activity.kpis) || activity.kpis.length === 0) {
+            return activity.progress || 0; // KPIがなければ現在の進捗度を返す
+        }
+        
+        const totalKPIs = activity.kpis.length;
+        const completedKPIs = activity.kpis.filter(kpi => 
+            typeof kpi === 'object' && kpi !== null && kpi.completed
+        ).length;
+        
+        // 進捗率を計算して四捨五入
+        const progress = Math.round((completedKPIs / totalKPIs) * 100);
+        
+        return progress;
+    }
+
+    // KPIの残り時間を計算する関数
+    function getTimeRemaining(deadlineDate) {
+        const now = new Date();
+        const deadline = new Date(deadlineDate);
+        deadline.setHours(23, 59, 59, 999); // 終日設定
+        
+        const diffMs = deadline - now;
+        
+        if (diffMs <= 0) {
+            return '期限切れ';
+        }
+        
+        // 同じ日の場合は時間と分で表示
+        if (now.getDate() === deadline.getDate() && 
+            now.getMonth() === deadline.getMonth() && 
+            now.getFullYear() === deadline.getFullYear()) {
+            
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            return `残り ${hours}時間 ${minutes}分`;
+        }
+        
+        // それ以外は日数で表示
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        return `残り ${days}日`;
+    }
+
     // 活動詳細ページをレンダリングする関数
     function renderActivityDetail() {
         const activity = getActivityById(state.currentActivity);
@@ -1031,10 +768,7 @@
         document.getElementById('detail-activity-purpose').textContent = activity.purpose;
         
         // 進捗バーを更新
-        const progressBar = document.getElementById('detail-progress-bar');
-        const progressPercentage = document.getElementById('detail-progress-percentage');
-        progressBar.style.width = `${activity.progress}%`;
-        progressPercentage.textContent = `${activity.progress}%`;
+        updateProgressDisplay(activity);
         
         // KPIリストをレンダリング
         const kpiList = document.getElementById('kpi-list');
@@ -1048,6 +782,7 @@
             // KPIオブジェクトかどうかを確認
             const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
             const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : null;
+            const isCompleted = typeof kpi === 'object' && kpi.completed;
             
             let deadlineHTML = '';
             if (kpiDeadline) {
@@ -1055,9 +790,17 @@
                 deadlineHTML = `<div class="detail-item-deadline">${timeRemaining}</div>`;
             }
             
+            // チェックボックスを追加
+            const checkboxHTML = `
+                <div class="kpi-checkbox-wrapper">
+                    <input type="checkbox" class="kpi-checkbox" data-index="${index}" ${isCompleted ? 'checked' : ''}>
+                </div>
+            `;
+            
             kpiItem.innerHTML = `
-                <div class="detail-item-content">${kpiText}</div>
+                <div class="detail-item-content ${isCompleted ? 'completed-kpi' : ''}">${kpiText}</div>
                 ${deadlineHTML}
+                ${checkboxHTML}
                 <div class="detail-item-actions">
                     <button class="detail-item-edit-btn" data-type="kpi" data-index="${index}">
                         <i class="fas fa-edit"></i>
@@ -1069,6 +812,33 @@
             `;
             
             kpiList.appendChild(kpiItem);
+            
+            // KPIチェックボックスのイベントリスナーを追加
+            const checkbox = kpiItem.querySelector('.kpi-checkbox');
+            checkbox.addEventListener('change', () => {
+                // KPIの完了状態を更新
+                activity.kpis[index].completed = checkbox.checked;
+                
+                // 進捗度を再計算
+                activity.progress = calculateProgressFromKPIs(activity);
+                
+                // 100%の場合は完了フラグも設定
+                if (activity.progress >= 100) {
+                    activity.completed = true;
+                } else {
+                    activity.completed = false;
+                }
+                
+                // UI更新
+                const kpiTextElement = kpiItem.querySelector('.detail-item-content');
+                kpiTextElement.classList.toggle('completed-kpi', checkbox.checked);
+                
+                // 進捗バーを更新
+                updateProgressDisplay(activity);
+                
+                // データを保存
+                saveData();
+            });
         });
         
         // フェーズリストをレンダリング
@@ -1145,17 +915,6 @@
             renderPage('activity-form');
         });
         
-        // 完了ボタンのイベントリスナーを設定
-        document.getElementById('mark-completed-btn').addEventListener('click', () => {
-            const activityIndex = state.activities.findIndex(a => a.id === state.currentActivity);
-            if (activityIndex !== -1) {
-                state.activities[activityIndex].completed = true;
-                state.activities[activityIndex].progress = 100;
-                saveData();
-                renderPage('home');
-            }
-        });
-        
         // KPI、フェーズ、タスクの追加ボタンのイベントリスナーを設定
         document.querySelector('.kpi-add-detail-btn').addEventListener('click', () => {
             addItemInDetail('kpi');
@@ -1169,11 +928,281 @@
             addItemInDetail('task');
         });
         
-        // 編集・削除ボタンのイベントリスナーを設定
-        // setupDetailItemListeners();
-        
         // 最終更新日時を更新
         updateLastUpdated();
+    }
+
+    // 進捗表示を更新する関数
+    function updateProgressDisplay(activity) {
+        const progressBar = document.getElementById('detail-progress-bar');
+        const progressPercentage = document.getElementById('detail-progress-percentage');
+        
+        if (progressBar && progressPercentage) {
+            progressBar.style.width = `${activity.progress}%`;
+            progressPercentage.textContent = `${activity.progress}%`;
+        }
+    }
+
+    // ダッシュボードをレンダリングする関数
+    function renderDashboard() {
+        updateLastUpdated();
+        updateCurrentDate();
+        
+        // 全ての事業をステータスで分類
+        const plannedActivities = state.activities.filter(a => a.progress < 20 && !a.completed);
+        const inProgressActivities = state.activities.filter(a => a.progress >= 20 && a.progress < 100 && !a.completed);
+        const completedActivities = state.activities.filter(a => a.progress >= 100 || a.completed);
+        const totalActivities = state.activities.length;
+        
+        // KPIの集計
+        let completedKPIs = 0;
+        let pendingKPIs = 0;
+        state.activities.forEach(activity => {
+            if (Array.isArray(activity.kpis)) {
+                activity.kpis.forEach(kpi => {
+                    if (typeof kpi === 'object' && kpi !== null && kpi.completed) {
+                        completedKPIs++;
+                    } else {
+                        pendingKPIs++;
+                    }
+                });
+            }
+        });
+        const totalKPIs = completedKPIs + pendingKPIs;
+        
+        // タイムライン別の事業数と進捗
+        const shortTermActivities = state.activities.filter(a => a.timeline === 'short-term');
+        const mediumTermActivities = state.activities.filter(a => a.timeline === 'medium-term');
+        const longTermActivities = state.activities.filter(a => a.timeline === 'long-term');
+        
+        const shortTermProgress = shortTermActivities.length > 0 ? 
+            Math.round(shortTermActivities.reduce((acc, a) => acc + a.progress, 0) / shortTermActivities.length) : 0;
+        const mediumTermProgress = mediumTermActivities.length > 0 ? 
+            Math.round(mediumTermActivities.reduce((acc, a) => acc + a.progress, 0) / mediumTermActivities.length) : 0;
+        const longTermProgress = longTermActivities.length > 0 ? 
+            Math.round(longTermActivities.reduce((acc, a) => acc + a.progress, 0) / longTermActivities.length) : 0;
+        
+        // 今日のタスク完了状況
+        const today = getCurrentDate();
+        const todayTasks = state.dailyTasks[today] || [];
+        const completedTasks = todayTasks.filter(task => task.completed).length;
+        const pendingTasks = todayTasks.length - completedTasks;
+        
+        // 期限が近いKPI（7日以内）
+        const upcomingKPIs = [];
+        state.activities.forEach(activity => {
+            if (Array.isArray(activity.kpis)) {
+                activity.kpis.forEach(kpi => {
+                    if (typeof kpi === 'object' && kpi !== null && kpi.deadline && !kpi.completed) {
+                        const deadline = new Date(kpi.deadline);
+                        const today = new Date();
+                        const diffTime = deadline.getTime() - today.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays >= 0 && diffDays <= 7) {
+                            upcomingKPIs.push({
+                                text: kpi.text,
+                                deadline: kpi.deadline,
+                                diffDays: diffDays,
+                                activity: activity.name
+                            });
+                        }
+                    }
+                });
+            }
+        });
+        
+        // 期限が近い順にソート
+        upcomingKPIs.sort((a, b) => a.diffDays - b.diffDays);
+        
+        // 表示をアップデート
+        document.getElementById('planned-count').textContent = plannedActivities.length;
+        document.getElementById('progress-count').textContent = inProgressActivities.length;
+        document.getElementById('complete-count').textContent = completedActivities.length;
+        document.getElementById('total-activities-count').textContent = totalActivities;
+        
+        document.getElementById('completed-kpi-count').textContent = completedKPIs;
+        document.getElementById('pending-kpi-count').textContent = pendingKPIs;
+        document.getElementById('total-kpi-count').textContent = totalKPIs;
+        
+        document.getElementById('completed-tasks-count').textContent = completedTasks;
+        document.getElementById('pending-tasks-count').textContent = pendingTasks;
+        document.getElementById('total-tasks-count').textContent = todayTasks.length;
+        
+        // 期限が近いKPIリストを表示
+        const upcomingKpiList = document.getElementById('upcoming-kpi-list');
+        upcomingKpiList.innerHTML = '';
+        
+        if (upcomingKPIs.length === 0) {
+            upcomingKpiList.innerHTML = '<div class="empty-list-message">期限が近いKPIはありません</div>';
+        } else {
+            upcomingKPIs.slice(0, 5).forEach(kpi => {
+                const deadlineDate = new Date(kpi.deadline);
+                const formattedDate = `${deadlineDate.getMonth() + 1}/${deadlineDate.getDate()}`;
+                
+                const kpiItem = document.createElement('div');
+                kpiItem.className = 'upcoming-kpi-item';
+                kpiItem.innerHTML = `
+                    <div class="upcoming-kpi-content">
+                        <div class="upcoming-kpi-text">${kpi.text}</div>
+                        <div class="upcoming-kpi-activity">${kpi.activity}</div>
+                    </div>
+                    <div class="upcoming-kpi-deadline">残り ${kpi.diffDays} 日 (${formattedDate})</div>
+                `;
+                upcomingKpiList.appendChild(kpiItem);
+            });
+        }
+        
+        // 最近の活動リストを表示（例として進捗率の高い事業を表示）
+        const recentActivitiesList = document.getElementById('recent-activities-list');
+        recentActivitiesList.innerHTML = '';
+        
+        const sortedByProgress = [...state.activities].sort((a, b) => b.progress - a.progress);
+        
+        if (sortedByProgress.length === 0) {
+            recentActivitiesList.innerHTML = '<div class="empty-list-message">アクティブな事業はありません</div>';
+        } else {
+            sortedByProgress.slice(0, 5).forEach(activity => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.innerHTML = `
+                    <div class="activity-item-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="activity-item-content">
+                        <div class="activity-item-title">${activity.name}</div>
+                        <div class="activity-item-progress">進捗度: ${activity.progress}%</div>
+                    </div>
+                `;
+                recentActivitiesList.appendChild(activityItem);
+            });
+        }
+        
+        // グラフの描画
+        renderDashboardCharts(
+            [plannedActivities.length, inProgressActivities.length, completedActivities.length],
+            [completedKPIs, pendingKPIs],
+            [
+                { label: '短期', count: shortTermActivities.length, progress: shortTermProgress },
+                { label: '中期', count: mediumTermActivities.length, progress: mediumTermProgress },
+                { label: '長期', count: longTermActivities.length, progress: longTermProgress }
+            ],
+            [completedTasks, pendingTasks]
+        );
+    }
+    
+    // ダッシュボードのグラフを描画する関数
+    function renderDashboardCharts(progressData, kpiData, timelineData, taskData) {
+        // 全体進捗状況のパイチャート
+        const progressPieCtx = document.getElementById('progress-pie-chart').getContext('2d');
+        const progressPieChart = new Chart(progressPieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['計画済み', '進行中', '完了'],
+                datasets: [{
+                    data: progressData,
+                    backgroundColor: ['#f1c40f', '#3498db', '#2ecc71'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // KPI達成状況のパイチャート
+        const kpiPieCtx = document.getElementById('kpi-pie-chart').getContext('2d');
+        const kpiPieChart = new Chart(kpiPieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['達成済み', '未達成'],
+                datasets: [{
+                    data: kpiData,
+                    backgroundColor: ['#2ecc71', '#e74c3c'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // タイムライン別進捗の棒グラフ
+        const timelineBarCtx = document.getElementById('timeline-bar-chart').getContext('2d');
+        const timelineBarChart = new Chart(timelineBarCtx, {
+            type: 'bar',
+            data: {
+                labels: timelineData.map(item => item.label),
+                datasets: [
+                    {
+                        label: '事業数',
+                        data: timelineData.map(item => item.count),
+                        backgroundColor: '#3498db',
+                        borderWidth: 1,
+                        order: 2
+                    },
+                    {
+                        label: '平均進捗率 (%)',
+                        data: timelineData.map(item => item.progress),
+                        type: 'line',
+                        borderColor: '#e74c3c',
+                        pointBackgroundColor: '#e74c3c',
+                        tension: 0.1,
+                        order: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+        
+        // タスク完了率のドーナツチャート
+        const taskDoughnutCtx = document.getElementById('task-doughnut-chart').getContext('2d');
+        const taskDoughnutChart = new Chart(taskDoughnutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['完了', '未完了'],
+                datasets: [{
+                    data: taskData,
+                    backgroundColor: ['#2ecc71', '#e74c3c'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
     }
 
     // 今日のタスク一覧ページをレンダリングする関数
@@ -1380,11 +1409,6 @@
         if (isNaN(date.getTime())) return false;
         
         return true;
-    }
-    
-    // 詳細画面での項目のイベントリスナーを設定
-    function setupDetailItemListeners() {
-        // 削除ボタンの処理は行わない（ボタンを非表示にしたため）
     }
     
     // 活動フォームに値を入力する関数
