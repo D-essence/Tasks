@@ -1022,6 +1022,10 @@ body {
     display: none !important;
 }
 
+.helper-toast {
+    display: none !important;
+}
+
 .fullscreen-detail {
     max-width: 100%;
     width: 100%;
