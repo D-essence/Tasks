@@ -371,7 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // URLのハッシュをチェックしてスクロール
         setTimeout(checkUrlHashAndScroll, 500);
         
-        // ヘルプトーストを表示しない
+        // ヘルプトーストを表示
+        showHelperToast('事業カードはドラッグ&ドロップで移動でき、目次からセクションに直接移動できます。');
     }
     
     // URLハッシュを確認してスクロールする関数
@@ -1217,19 +1218,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!state.dailyTasks[today]) {
             state.dailyTasks[today] = [];
             
-            // 各活動の毎日のタスクをコピー（タスクが存在する場合のみ）
+            // 各活動の毎日のタスクをコピー
             state.activities.forEach(activity => {
-                if (activity.dailyTasks && activity.dailyTasks.length > 0) {
-                    activity.dailyTasks.forEach(task => {
-                        state.dailyTasks[today].push({
-                            id: generateId(),
-                            activityId: activity.id,
-                            activityName: activity.name,
-                            name: task,
-                            completed: false
-                        });
+                activity.dailyTasks.forEach(task => {
+                    state.dailyTasks[today].push({
+                        id: generateId(),
+                        activityId: activity.id,
+                        activityName: activity.name,
+                        name: task,
+                        completed: false
                     });
-                }
+                });
             });
             
             saveData();
@@ -1380,18 +1379,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 activity.dailyTasks.push(taskText);
                 
-                // 今日のタスクが存在する場合のみ追加
-                if (taskText && taskText.trim() !== '') {
-                    const today = getCurrentDate();
-                    if (state.dailyTasks[today]) {
-                        state.dailyTasks[today].push({
-                            id: generateId(),
-                            activityId: activity.id,
-                            activityName: activity.name,
-                            name: taskText,
-                            completed: false
-                        });
-                    }
+                // 今日のタスクに追加
+                const today = getCurrentDate();
+                if (state.dailyTasks[today]) {
+                    state.dailyTasks[today].push({
+                        id: generateId(),
+                        activityId: activity.id,
+                        activityName: activity.name,
+                        name: taskText,
+                        completed: false
+                    });
                 }
                 break;
                 
@@ -1702,25 +1699,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 state.activities[activityIndex] = updatedActivity;
                 
-                // 今日のタスクも更新（タスクがある場合のみ）
-                if (dailyTasks && dailyTasks.length > 0) {
-                    const today = getCurrentDate();
-                    if (state.dailyTasks[today]) {
-                        // 古いタスクを削除
-                        state.dailyTasks[today] = state.dailyTasks[today].filter(task => task.activityId !== oldActivity.id);
-                        
-                        // 新しいタスクを追加
-                        dailyTasks.forEach(task => {
-                            state.dailyTasks[today].push({
-                                id: generateId(),
-                                activityId: oldActivity.id,
-                                activityName: name,
-                                name: task,
-                                completed: false
-                            });
+                // 今日のタスクも更新
+                const today = getCurrentDate();
+                if (state.dailyTasks[today]) {
+                    // 古いタスクを削除
+                    state.dailyTasks[today] = state.dailyTasks[today].filter(task => task.activityId !== oldActivity.id);
+                    
+                    // 新しいタスクを追加
+                    dailyTasks.forEach(task => {
+                        state.dailyTasks[today].push({
+                            id: generateId(),
+                            activityId: oldActivity.id,
+                            activityName: name,
+                            name: task,
+                            completed: false
                         });
-                    }
-                }
+                    });
                 }
                 
                 saveData();
