@@ -1,137 +1,4 @@
-<!-- テンプレート: ダッシュボード画面 -->
-    <template id="dashboard-template">
-        <div class="document">
-            <header class="document-header">
-                <h1 class="document-title">ダッシュボード</h1>
-                <p class="document-subtitle">事業進捗の統計情報と分析</p>
-                <div class="document-date">日付: <span id="dashboard-current-date"></span></div>
-            </header>
-            
-            <nav class="document-nav">
-                <h2 class="nav-title">目次</h2>
-                <ul class="nav-links">
-                    <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
-                    <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
-                    <li><a href="#" data-page="dashboard" class="nav-link active">ダッシュボード</a></li>
-                    <li><a href="#" data-page="summary" class="nav-link">サマリー</a></li>
-                    <li><a href="#" data-page="in-progress" class="nav-link">進行中の事業</a></li>
-                    <li><a href="#" data-page="short-term" class="nav-link">短期計画</a></li>
-                    <li><a href="#" data-page="medium-term" class="nav-link">中期計画</a></li>
-                    <li><a href="#" data-page="long-term" class="nav-link">長期計画</a></li>
-                    <li><a href="#" data-page="completed" class="nav-link">完了済み事業</a></li>
-                </ul>
-            </nav>
-            
-            <main class="document-body">
-                <div class="dashboard-grid">
-                    <!-- 事業全体の進捗状況 -->
-                    <div class="dashboard-card progress-overview">
-                        <h3 class="dashboard-card-title">全体進捗状況</h3>
-                        <div class="progress-stats">
-                            <div class="progress-pie-container">
-                                <canvas id="progress-pie-chart"></canvas>
-                            </div>
-                            <div class="progress-stats-details">
-                                <div class="stat-row">
-                                    <div class="stat-label">計画済み事業</div>
-                                    <div class="stat-value" id="planned-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">進行中事業</div>
-                                    <div class="stat-value" id="progress-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">完了事業</div>
-                                    <div class="stat-value" id="complete-count">0</div>
-                                </div>
-                                <div class="stat-row total">
-                                    <div class="stat-label">合計</div>
-                                    <div class="stat-value" id="total-activities-count">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- KPI達成状況 -->
-                    <div class="dashboard-card kpi-progress">
-                        <h3 class="dashboard-card-title">KPI達成状況</h3>
-                        <div class="kpi-stats">
-                            <div class="kpi-pie-container">
-                                <canvas id="kpi-pie-chart"></canvas>
-                            </div>
-                            <div class="kpi-stats-details">
-                                <div class="stat-row">
-                                    <div class="stat-label">達成済みKPI</div>
-                                    <div class="stat-value" id="completed-kpi-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">未達成KPI</div>
-                                    <div class="stat-value" id="pending-kpi-count">0</div>
-                                </div>
-                                <div class="stat-row total">
-                                    <div class="stat-label">合計KPI数</div>
-                                    <div class="stat-value" id="total-kpi-count">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- タイムライン別進捗 -->
-                    <div class="dashboard-card timeline-progress">
-                        <h3 class="dashboard-card-title">タイムライン別進捗</h3>
-                        <div class="timeline-chart-container">
-                            <canvas id="timeline-bar-chart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- タスク完了率 -->
-                    <div class="dashboard-card task-completion">
-                        <h3 class="dashboard-card-title">今日のタスク完了率</h3>
-                        <div class="task-completion-chart">
-                            <div class="task-chart-container">
-                                <canvas id="task-doughnut-chart"></canvas>
-                            </div>
-                            <div class="task-stats">
-                                <div class="stat-row">
-                                    <div class="stat-label">完了タスク</div>
-                                    <div class="stat-value" id="completed-tasks-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">未完了タスク</div>
-                                    <div class="stat-value" id="pending-tasks-count">0</div>
-                                </div>
-                                <div class="stat-row total">
-                                    <div class="stat-label">合計タスク数</div>
-                                    <div class="stat-value" id="total-tasks-count">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 期限が近いKPI -->
-                    <div class="dashboard-card upcoming-deadlines">
-                        <h3 class="dashboard-card-title">期限が近いKPI</h3>
-                        <div class="upcoming-kpi-list" id="upcoming-kpi-list">
-                            <!-- ここに期限が近いKPIが表示されます -->
-                        </div>
-                    </div>
-                    
-                    <!-- 最近の活動 -->
-                    <div class="dashboard-card recent-activities">
-                        <h3 class="dashboard-card-title">最近の進捗状況</h3>
-                        <div class="activity-list" id="recent-activities-list">
-                            <!-- ここに最近の活動が表示されます -->
-                        </div>
-                    </div>
-                </div>
-            </main>
-            
-            <footer class="document-footer">
-                <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
-                <div class="footer-updated">最終更新：<span id="dashboard-last-updated"></span></div>
-            </footer>
-        </div>
-    </template><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -417,9 +284,7 @@
             </footer>
 
             <div class="floating-buttons">
-                <button id="mark-completed-btn" class="floating-btn complete-btn">
-                    <i class="fas fa-check"></i>
-                </button>
+                <!-- 完了ボタンを削除 -->
                 <button id="edit-activity-btn" class="floating-btn edit-btn">
                     <i class="fas fa-edit"></i>
                 </button>
@@ -566,6 +431,141 @@
             
             <footer class="document-footer">
                 <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
+            </footer>
+        </div>
+    </template>
+
+    <!-- テンプレート: ダッシュボード画面 -->
+    <template id="dashboard-template">
+        <div class="document">
+            <header class="document-header">
+                <h1 class="document-title">ダッシュボード</h1>
+                <p class="document-subtitle">事業進捗の統計情報と分析</p>
+                <div class="document-date">日付: <span id="dashboard-current-date"></span></div>
+            </header>
+            
+            <nav class="document-nav">
+                <h2 class="nav-title">目次</h2>
+                <ul class="nav-links">
+                    <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
+                    <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
+                    <li><a href="#" data-page="dashboard" class="nav-link active">ダッシュボード</a></li>
+                    <li><a href="#" data-page="summary" class="nav-link">サマリー</a></li>
+                    <li><a href="#" data-page="in-progress" class="nav-link">進行中の事業</a></li>
+                    <li><a href="#" data-page="short-term" class="nav-link">短期計画</a></li>
+                    <li><a href="#" data-page="medium-term" class="nav-link">中期計画</a></li>
+                    <li><a href="#" data-page="long-term" class="nav-link">長期計画</a></li>
+                    <li><a href="#" data-page="completed" class="nav-link">完了済み事業</a></li>
+                </ul>
+            </nav>
+            
+            <main class="document-body">
+                <div class="dashboard-grid">
+                    <!-- 事業全体の進捗状況 -->
+                    <div class="dashboard-card progress-overview">
+                        <h3 class="dashboard-card-title">全体進捗状況</h3>
+                        <div class="progress-stats">
+                            <div class="progress-pie-container">
+                                <canvas id="progress-pie-chart"></canvas>
+                            </div>
+                            <div class="progress-stats-details">
+                                <div class="stat-row">
+                                    <div class="stat-label">計画済み事業</div>
+                                    <div class="stat-value" id="planned-count">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">進行中事業</div>
+                                    <div class="stat-value" id="progress-count">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">完了事業</div>
+                                    <div class="stat-value" id="complete-count">0</div>
+                                </div>
+                                <div class="stat-row total">
+                                    <div class="stat-label">合計</div>
+                                    <div class="stat-value" id="total-activities-count">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI達成状況 -->
+                    <div class="dashboard-card kpi-progress">
+                        <h3 class="dashboard-card-title">KPI達成状況</h3>
+                        <div class="kpi-stats">
+                            <div class="kpi-pie-container">
+                                <canvas id="kpi-pie-chart"></canvas>
+                            </div>
+                            <div class="kpi-stats-details">
+                                <div class="stat-row">
+                                    <div class="stat-label">達成済みKPI</div>
+                                    <div class="stat-value" id="completed-kpi-count">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">未達成KPI</div>
+                                    <div class="stat-value" id="pending-kpi-count">0</div>
+                                </div>
+                                <div class="stat-row total">
+                                    <div class="stat-label">合計KPI数</div>
+                                    <div class="stat-value" id="total-kpi-count">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- タイムライン別進捗 -->
+                    <div class="dashboard-card timeline-progress">
+                        <h3 class="dashboard-card-title">タイムライン別進捗</h3>
+                        <div class="timeline-chart-container">
+                            <canvas id="timeline-bar-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- タスク完了率 -->
+                    <div class="dashboard-card task-completion">
+                        <h3 class="dashboard-card-title">今日のタスク完了率</h3>
+                        <div class="task-completion-chart">
+                            <div class="task-chart-container">
+                                <canvas id="task-doughnut-chart"></canvas>
+                            </div>
+                            <div class="task-stats">
+                                <div class="stat-row">
+                                    <div class="stat-label">完了タスク</div>
+                                    <div class="stat-value" id="completed-tasks-count">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">未完了タスク</div>
+                                    <div class="stat-value" id="pending-tasks-count">0</div>
+                                </div>
+                                <div class="stat-row total">
+                                    <div class="stat-label">合計タスク数</div>
+                                    <div class="stat-value" id="total-tasks-count">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 期限が近いKPI -->
+                    <div class="dashboard-card upcoming-deadlines">
+                        <h3 class="dashboard-card-title">期限が近いKPI</h3>
+                        <div class="upcoming-kpi-list" id="upcoming-kpi-list">
+                            <!-- ここに期限が近いKPIが表示されます -->
+                        </div>
+                    </div>
+                    
+                    <!-- 最近の活動 -->
+                    <div class="dashboard-card recent-activities">
+                        <h3 class="dashboard-card-title">最近の進捗状況</h3>
+                        <div class="activity-list" id="recent-activities-list">
+                            <!-- ここに最近の活動が表示されます -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <footer class="document-footer">
+                <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
+                <div class="footer-updated">最終更新：<span id="dashboard-last-updated"></span></div>
             </footer>
         </div>
     </template>
