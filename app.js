@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
         currentActivity: null,
         dailyTasks: {},
         editMode: false,
-        editingItem: null
+        editingItem: null,
+        helperToastShown: true // 初期ポップアップを表示しないようフラグを設定
     };
 
     // 初期データのロード
@@ -393,6 +394,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ヘルプトースト表示関数
     function showHelperToast(message, duration = 5000) {
+        // 既に表示済みならスキップ
+        if (state.helperToastShown) return;
+        
+        state.helperToastShown = true;
+        
         const toast = document.createElement('div');
         toast.className = 'helper-toast';
         toast.innerHTML = `
@@ -1559,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             inputGroup.className = 'input-group';
             inputGroup.innerHTML = `
-                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}" required>
+                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}" ${type !== 'task' ? 'required' : ''}>
                 <button type="button" class="remove-item-btn ${type}-remove-btn">
                     <i class="fas fa-minus"></i>
                 </button>
