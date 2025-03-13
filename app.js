@@ -2274,4 +2274,4 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-});
+};
