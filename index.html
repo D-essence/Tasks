@@ -423,6 +423,55 @@
         </div>
     </template>
 
+    <!-- テンプレート: KPI一覧画面 -->
+<template id="kpi-list-template">
+    <div class="document">
+        <header class="document-header">
+            <h1 class="document-title">KPI一覧</h1>
+            <p class="document-subtitle">全事業のKPI進捗状況</p>
+            <div class="document-date">日付: <span id="kpi-current-date"></span></div>
+        </header>
+        
+        <nav class="document-nav">
+            <h2 class="nav-title">目次</h2>
+            <ul class="nav-links">
+                <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
+                <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
+                <li><a href="#" data-page="kpi-list" class="nav-link active">KPI一覧</a></li>
+                <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
+            </ul>
+        </nav>
+        
+        <main class="document-body">
+            <div class="kpi-filter">
+                <button class="filter-btn active" data-filter="all">すべて</button>
+                <button class="filter-btn" data-filter="pending">未達成</button>
+                <button class="filter-btn" data-filter="completed">達成済み</button>
+            </div>
+
+            <div class="kpi-completion-summary">
+                <div class="completion-progress">
+                    <div class="completion-bar-container">
+                        <div class="completion-bar" id="kpi-completion-progress-bar"></div>
+                    </div>
+                    <div class="completion-text">
+                        <span id="kpi-completed-count">0</span>/<span id="total-kpi-count">0</span> KPI達成
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-container" id="kpi-list-container">
+                <!-- KPIがここに動的に挿入されます -->
+            </div>
+        </main>
+        
+        <footer class="document-footer">
+            <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
+            <div class="footer-updated">最終更新：<span id="kpi-footer-last-updated"></span></div>
+        </footer>
+    </div>
+</template>
+
     <!-- テンプレート: ダッシュボード画面 -->
     <template id="dashboard-template">
         <div class="document">
