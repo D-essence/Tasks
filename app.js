@@ -242,470 +242,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // 初期タスク状態の作成
         const initialDailyTasks = {};
         const today = new Date().toISOString().split('T')[0];
-
+        
         initialActivities.forEach(activity => {
-    if (activity.dailyTasks && activity.dailyTasks.length > 0) {
-        activity.dailyTasks.forEach(task => {
-            const taskId = generateId();
-            if (!initialDailyTasks[today]) {
-                initialDailyTasks[today] = [];
-            }
-            initialDailyTasks[today].push({
-                id: taskId,
-                activityId: activity.id,
-                activityName: activity.name,
-                name: task,
-                completed: false,
-                isRecurring: true
-            });
-        });
-    }
-});
-        
-        saveData();
-        renderActivityDetail();
-    
-    // 日付の妥当性をチェックする関数
-    function isValidDate(dateString) {
-        const regex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!regex.test(dateString)) return false;
-        
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return false;
-        
-        return true;
-    }
-    
-    // 活動フォームに値を入力する関数
-    function fillActivityForm() {
-        const activity = getActivityById(state.currentActivity);
-        if (!activity) return;
-        
-        document.getElementById('activity-name').value = activity.name;
-        document.getElementById('activity-purpose').value = activity.purpose;
-        document.getElementById('activity-timeline').value = activity.timeline;
-        document.getElementById('activity-progress').value = activity.progress;
-        
-        // KPIの入力フィールドを作成
-        const kpiInputs = document.getElementById('kpi-inputs');
-        kpiInputs.innerHTML = '';
-        
-        activity.kpis.forEach((kpi, index) => {
-            const inputGroup = document.createElement('div');
-            inputGroup.className = 'input-group kpi-input-group';
-            
-            // KPIがオブジェクトかどうかを確認
-            const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
-            const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : getFutureDateString(10);
-            
-            inputGroup.innerHTML = `
-                <input type="text" class="kpi-input" placeholder="KPI" value="${kpiText}" required>
-                <input type="date" class="kpi-date-input" value="${kpiDeadline}" required>
-                ${index === 0 ? 
-                    `<button type="button" class="add-item-btn kpi-add-btn">
-                        <i class="fas fa-plus"></i>
-                    </button>` :
-                    `<button type="button" class="remove-item-btn kpi-remove-btn">
-                        <i class="fas fa-minus"></i>
-                    </button>`
-                }
-            `;
-            
-            kpiInputs.appendChild(inputGroup);
-        });
-        
-        // フェーズの入力フィールドを作成
-        const phaseInputs = document.getElementById('phase-inputs');
-        phaseInputs.innerHTML = '';
-        
-        activity.phases.forEach((phase, index) => {
-            const inputGroup = document.createElement('div');
-            inputGroup.className = 'input-group';
-            
-            inputGroup.innerHTML = `
-                <input type="text" class="phase-input" placeholder="フェーズ" value="${phase}">
-                ${index === 0 ? 
-                    `<button type="button" class="add-item-btn phase-add-btn">
-                        <i class="fas fa-plus"></i>
-                    </button>` :
-                    `<button type="button" class="remove-item-btn phase-remove-btn">
-                        <i class="fas fa-minus"></i>
-                    </button>`
-                }
-            `;
-            
-            phaseInputs.appendChild(inputGroup);
-        });
-        
-        // 毎日のタスクの入力フィールドを作成
-        const taskInputs = document.getElementById('task-inputs');
-        taskInputs.innerHTML = '';
-        
-        if (activity.dailyTasks && activity.dailyTasks.length > 0) {
-            activity.dailyTasks.forEach((task, index) => {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                
-                inputGroup.innerHTML = `
-                    <input type="text" class="task-input" placeholder="タスク" value="${task}">
-                    ${index === 0 ? 
-                        `<button type="button" class="add-item-btn task-add-btn">
-                            <i class="fas fa-plus"></i>
-                        </button>` :
-                        `<button type="button" class="remove-item-btn task-remove-btn">
-                            <i class="fas fa-minus"></i>
-                        </button>`
+            if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+                activity.dailyTasks.forEach(task => {
+                    const taskId = generateId();
+                    if (!initialDailyTasks[today]) {
+                        initialDailyTasks[today] = [];
                     }
-                `;
-                
-                taskInputs.appendChild(inputGroup);
-            });
-        } else {
-            // タスクがない場合は空の入力フィールドを表示
-            const inputGroup = document.createElement('div');
-            inputGroup.className = 'input-group';
-            
-            inputGroup.innerHTML = `
-                <input type="text" class="task-input" placeholder="タスク">
-                <button type="button" class="add-item-btn task-add-btn">
-                    <i class="fas fa-plus"></i>
-                </button>
-            `;
-            
-            taskInputs.appendChild(inputGroup);
-        }
-        
-        // 各入力フィールドの追加・削除ボタンにイベントリスナーを設定
-        setupDynamicInputListeners();
-    }
-
-    // 活動フォームのイベントリスナーを設定する関数
-    function setupFormEventListeners() {
-        // 戻るボタンイベントを設定
-        document.querySelector('.back-button').addEventListener('click', handleFormCancel);
-        
-        // キャンセルボタンイベントを設定
-        document.querySelector('.cancel-btn').addEventListener('click', handleFormCancel);
-        
-        // フォーム送信イベントを設定
-        document.getElementById('activity-form').addEventListener('submit', handleFormSubmit);
-        
-        // 動的な入力フィールドのイベントリスナーを設定
-        setupDynamicInputListeners();
-    }
-
-    // 動的な入力フィールドのイベントリスナーを設定する関数
-    function setupDynamicInputListeners() {
-        // KPI追加ボタンイベントを設定
-        document.querySelectorAll('.kpi-add-btn').forEach(button => {
-            button.addEventListener('click', () => addInputField('kpi'));
-        });
-        
-        // フェーズ追加ボタンイベントを設定
-        document.querySelectorAll('.phase-add-btn').forEach(button => {
-            button.addEventListener('click', () => addInputField('phase'));
-        });
-        
-        // タスク追加ボタンイベントを設定
-        document.querySelectorAll('.task-add-btn').forEach(button => {
-            button.addEventListener('click', () => addInputField('task'));
-        });
-        
-        // 削除ボタンイベントを設定
-        document.querySelectorAll('.remove-item-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                this.parentElement.remove();
-            });
-        });
-    }
-
-    // 動的な入力フィールドを追加する関数
-    function addInputField(type) {
-        const container = document.getElementById(`${type}-inputs`);
-        const inputGroup = document.createElement('div');
-        
-        if (type === 'kpi') {
-            inputGroup.className = 'input-group kpi-input-group';
-            inputGroup.innerHTML = `
-                <input type="text" class="kpi-input" placeholder="KPI" required>
-                <input type="date" class="kpi-date-input" value="${getFutureDateString(10)}" required>
-                <button type="button" class="remove-item-btn kpi-remove-btn">
-                    <i class="fas fa-minus"></i>
-                </button>
-            `;
-        } else {
-            inputGroup.className = 'input-group';
-            inputGroup.innerHTML = `
-                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}">
-                <button type="button" class="remove-item-btn ${type}-remove-btn">
-                    <i class="fas fa-minus"></i>
-                </button>
-            `;
-        }
-        
-        container.appendChild(inputGroup);
-        
-        // 削除ボタンイベントを設定
-        inputGroup.querySelector('.remove-item-btn').addEventListener('click', function() {
-            this.parentElement.remove();
-        });
-        
-        // 追加したフィールドにフォーカスを当てる
-        inputGroup.querySelector('input').focus();
-    }
-
-    // フォームキャンセル処理
-    function handleFormCancel() {
-        if (state.editMode) {
-            renderPage('activity-detail');
-        } else {
-            renderPage('home');
-        }
-    }
-
-    // KPIの配列をチェック
-    function validateKpiObjects(kpis) {
-        if (!Array.isArray(kpis)) return [];
-        
-        return kpis.map(kpi => {
-            if (typeof kpi === 'string') {
-                return {
-                    text: kpi,
-                    deadline: getFutureDateString(10),
-                    completed: false
-                };
-            } else if (typeof kpi === 'object' && kpi !== null) {
-                return {
-                    text: kpi.text || '',
-                    deadline: kpi.deadline || getFutureDateString(10),
-                    completed: kpi.completed === true
-                };
-            } else {
-                return {
-                    text: '',
-                    deadline: getFutureDateString(10),
-                    completed: false
-                };
-            }
-        });
-    }
-    
-    // フォーム送信処理
-    function handleFormSubmit(event) {
-        event.preventDefault();
-        
-        // フォームからデータを取得
-        const name = document.getElementById('activity-name').value;
-        const purpose = document.getElementById('activity-purpose').value;
-        const timeline = document.getElementById('activity-timeline').value;
-        const formProgress = parseInt(document.getElementById('activity-progress').value);
-        
-        // KPIを取得
-        const kpis = [];
-        const kpiGroups = document.querySelectorAll('.kpi-input-group');
-        kpiGroups.forEach(group => {
-            const kpiText = group.querySelector('.kpi-input').value.trim();
-            const kpiDate = group.querySelector('.kpi-date-input').value;
-            
-            if (kpiText && kpiDate) {
-                kpis.push({
-                    text: kpiText,
-                    deadline: kpiDate,
-                    completed: false // 新規追加時は未完了
-                });
-            }
-        });
-        
-        // フェーズを取得
-        const phases = [];
-        document.querySelectorAll('.phase-input').forEach(input => {
-            if (input.value.trim()) {
-                phases.push(input.value.trim());
-            }
-        });
-        
-        // タスクを取得
-        const dailyTasks = [];
-        document.querySelectorAll('.task-input').forEach(input => {
-            if (input.value.trim()) {
-                dailyTasks.push(input.value.trim());
-            }
-        });
-        
-        if (state.editMode) {
-            // 活動の編集
-            const activityIndex = state.activities.findIndex(a => a.id === state.currentActivity);
-            if (activityIndex !== -1) {
-                const oldActivity = state.activities[activityIndex];
-                
-                // 既存のKPIのcompleted状態を保持
-                const mergedKpis = kpis.map(newKpi => {
-                    // 既存のKPIで同じテキストを持つものを探す
-                    const existingKpi = oldActivity.kpis.find(k => 
-                        typeof k === 'object' && k.text === newKpi.text
-                    );
-                    
-                    // 既存のKPIが見つかった場合はcompleted状態を引き継ぐ
-                    if (existingKpi) {
-                        return {
-                            ...newKpi,
-                            completed: existingKpi.completed || false
-                        };
-                    }
-                    
-                    return newKpi;
-                });
-                
-                // 進捗度を計算
-                let calculatedProgress;
-                if (mergedKpis.length > 0) {
-                    calculatedProgress = calculateProgressFromKPIs({ kpis: mergedKpis });
-                } else {
-                    calculatedProgress = formProgress;
-                }
-                
-                const updatedActivity = {
-                    ...oldActivity,
-                    name,
-                    purpose,
-                    timeline,
-                    progress: calculatedProgress,
-                    completed: calculatedProgress >= 100 || oldActivity.completed,
-                    notes: oldActivity.notes || '',
-                    kpis: mergedKpis,
-                    phases,
-                    dailyTasks: dailyTasks || [] // タスクがなければ空の配列に
-                };
-                
-                state.activities[activityIndex] = updatedActivity;
-                
-                // 今日のタスクも更新
-                const today = getCurrentDate();
-                if (state.dailyTasks[today]) {
-                    // 古いタスクを削除（定期的なタスクのみ）
-                    state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
-                        task.activityId !== oldActivity.id || !task.isRecurring
-                    );
-                    
-                    // 新しいタスクを追加（定期的なタスク）
-                    if (!updatedActivity.completed) {
-                        dailyTasks.forEach(task => {
-                            state.dailyTasks[today].push({
-                                id: generateId(),
-                                activityId: oldActivity.id,
-                                activityName: name,
-                                name: task,
-                                completed: false,
-                                isRecurring: true
-                            });
-                        });
-                    }
-                }
-                
-                saveData();
-                renderPage('activity-detail');
-            }
-        } else {
-            // 新規活動の追加
-            // 進捗度を計算
-            let calculatedProgress;
-            if (kpis.length > 0) {
-                calculatedProgress = calculateProgressFromKPIs({ kpis });
-            } else {
-                calculatedProgress = formProgress;
-            }
-            
-            const newActivity = {
-                id: generateId(),
-                name,
-                purpose,
-                timeline,
-                progress: calculatedProgress,
-                completed: calculatedProgress >= 100,
-                notes: '',
-                kpis,
-                phases,
-                dailyTasks: dailyTasks || [] // 毎日のタスクが無い場合は空配列に
-            };
-            
-            state.activities.push(newActivity);
-            
-            // 毎日のタスクを今日のタスクに追加（完了していない場合のみ）
-            if (dailyTasks && dailyTasks.length > 0 && !newActivity.completed) {
-                const today = getCurrentDate();
-                if (!state.dailyTasks[today]) {
-                    state.dailyTasks[today] = [];
-                }
-                
-                dailyTasks.forEach(task => {
-                    state.dailyTasks[today].push({
-                        id: generateId(),
-                        activityId: newActivity.id,
-                        activityName: name,
-                        name: task,
-                        completed: false,
-                        isRecurring: true
-                    });
-                });
-            }
-            
-            saveData();
-            state.currentActivity = newActivity.id;
-            renderPage('home');
-        }
-    }
-
-    // =====================
-    // イベントリスナー設定
-    // =====================
-    
-    // 主要なイベントリスナーを設定する関数
-    function setupEventListeners() {
-        // ウィンドウのリサイズイベント
-        window.addEventListener('resize', function() {
-            // 必要に応じてレスポンシブ対応のコード
-        });
-    }
-
-    // ナビゲーションのイベントリスナーを設定する関数
-    function setupNavigationListeners() {
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(event) {
-                event.preventDefault();
-                const page = this.dataset.page;
-                
-                // ホームページでのセクションジャンプ処理
-                if (state.currentPage === 'home' && page !== 'daily-tasks' && page !== 'kpi-list' && page !== 'activity-form' && page !== 'dashboard') {
-                    // ページ内のセクションにスクロール
-                    const section = document.getElementById(page);
-                    if (section) {
-                        // 目次リンクのアクティブ状態を更新
-                        navLinks.forEach(l => l.classList.remove('active'));
-                        this.classList.add('active');
-                        
-                        // URLにハッシュを追加してブックマークしやすくする
-                        window.history.pushState(null, null, `#${page}`);
-                        
-                        // スムーズにスクロール
-                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        return;
-                    }
-                }
-                
-                // 同じページの場合は何もしない（ホームページのセクションジャンプを除く）
-                if (page === state.currentPage) return;
-                
-                // アクティブなリンクを更新
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                
-                // ページ遷移
-                renderPage(page);
-            });
-        });
-    }
-});
                     initialDailyTasks[today].push({
                         id: taskId,
                         activityId: activity.id,
@@ -2285,3 +1829,449 @@ document.addEventListener('DOMContentLoaded', function() {
             default:
                 return;
         }
+        
+        saveData();
+        renderActivityDetail();
+    }
+    
+    // 日付の妥当性をチェックする関数
+    function isValidDate(dateString) {
+        const regex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!regex.test(dateString)) return false;
+        
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return false;
+        
+        return true;
+    }
+    
+    // 活動フォームに値を入力する関数
+    function fillActivityForm() {
+        const activity = getActivityById(state.currentActivity);
+        if (!activity) return;
+        
+        document.getElementById('activity-name').value = activity.name;
+        document.getElementById('activity-purpose').value = activity.purpose;
+        document.getElementById('activity-timeline').value = activity.timeline;
+        document.getElementById('activity-progress').value = activity.progress;
+        
+        // KPIの入力フィールドを作成
+        const kpiInputs = document.getElementById('kpi-inputs');
+        kpiInputs.innerHTML = '';
+        
+        activity.kpis.forEach((kpi, index) => {
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group kpi-input-group';
+            
+            // KPIがオブジェクトかどうかを確認
+            const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
+            const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : getFutureDateString(10);
+            
+            inputGroup.innerHTML = `
+                <input type="text" class="kpi-input" placeholder="KPI" value="${kpiText}" required>
+                <input type="date" class="kpi-date-input" value="${kpiDeadline}" required>
+                ${index === 0 ? 
+                    `<button type="button" class="add-item-btn kpi-add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>` :
+                    `<button type="button" class="remove-item-btn kpi-remove-btn">
+                        <i class="fas fa-minus"></i>
+                    </button>`
+                }
+            `;
+            
+            kpiInputs.appendChild(inputGroup);
+        });
+        
+        // フェーズの入力フィールドを作成
+        const phaseInputs = document.getElementById('phase-inputs');
+        phaseInputs.innerHTML = '';
+        
+        activity.phases.forEach((phase, index) => {
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            
+            inputGroup.innerHTML = `
+                <input type="text" class="phase-input" placeholder="フェーズ" value="${phase}">
+                ${index === 0 ? 
+                    `<button type="button" class="add-item-btn phase-add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>` :
+                    `<button type="button" class="remove-item-btn phase-remove-btn">
+                        <i class="fas fa-minus"></i>
+                    </button>`
+                }
+            `;
+            
+            phaseInputs.appendChild(inputGroup);
+        });
+        
+        // 毎日のタスクの入力フィールドを作成
+        const taskInputs = document.getElementById('task-inputs');
+        taskInputs.innerHTML = '';
+        
+        if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+            activity.dailyTasks.forEach((task, index) => {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'input-group';
+                
+                inputGroup.innerHTML = `
+                    <input type="text" class="task-input" placeholder="タスク" value="${task}">
+                    ${index === 0 ? 
+                        `<button type="button" class="add-item-btn task-add-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>` :
+                        `<button type="button" class="remove-item-btn task-remove-btn">
+                            <i class="fas fa-minus"></i>
+                        </button>`
+                    }
+                `;
+                
+                taskInputs.appendChild(inputGroup);
+            });
+        } else {
+            // タスクがない場合は空の入力フィールドを表示
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            
+            inputGroup.innerHTML = `
+                <input type="text" class="task-input" placeholder="タスク">
+                <button type="button" class="add-item-btn task-add-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            `;
+            
+            taskInputs.appendChild(inputGroup);
+        }
+        
+        // 各入力フィールドの追加・削除ボタンにイベントリスナーを設定
+        setupDynamicInputListeners();
+    }
+
+    // 活動フォームのイベントリスナーを設定する関数
+    function setupFormEventListeners() {
+        // 戻るボタンイベントを設定
+        document.querySelector('.back-button').addEventListener('click', handleFormCancel);
+        
+        // キャンセルボタンイベントを設定
+        document.querySelector('.cancel-btn').addEventListener('click', handleFormCancel);
+        
+        // フォーム送信イベントを設定
+        document.getElementById('activity-form').addEventListener('submit', handleFormSubmit);
+        
+        // 動的な入力フィールドのイベントリスナーを設定
+        setupDynamicInputListeners();
+    }
+
+    // 動的な入力フィールドのイベントリスナーを設定する関数
+    function setupDynamicInputListeners() {
+        // KPI追加ボタンイベントを設定
+        document.querySelectorAll('.kpi-add-btn').forEach(button => {
+            button.addEventListener('click', () => addInputField('kpi'));
+        });
+        
+        // フェーズ追加ボタンイベントを設定
+        document.querySelectorAll('.phase-add-btn').forEach(button => {
+            button.addEventListener('click', () => addInputField('phase'));
+        });
+        
+        // タスク追加ボタンイベントを設定
+        document.querySelectorAll('.task-add-btn').forEach(button => {
+            button.addEventListener('click', () => addInputField('task'));
+        });
+        
+        // 削除ボタンイベントを設定
+        document.querySelectorAll('.remove-item-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.remove();
+            });
+        });
+    }
+
+    // 動的な入力フィールドを追加する関数
+    function addInputField(type) {
+        const container = document.getElementById(`${type}-inputs`);
+        const inputGroup = document.createElement('div');
+        
+        if (type === 'kpi') {
+            inputGroup.className = 'input-group kpi-input-group';
+            inputGroup.innerHTML = `
+                <input type="text" class="kpi-input" placeholder="KPI" required>
+                <input type="date" class="kpi-date-input" value="${getFutureDateString(10)}" required>
+                <button type="button" class="remove-item-btn kpi-remove-btn">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+        } else {
+            inputGroup.className = 'input-group';
+            inputGroup.innerHTML = `
+                <input type="text" class="${type}-input" placeholder="${type === 'phase' ? 'フェーズ' : 'タスク'}">
+                <button type="button" class="remove-item-btn ${type}-remove-btn">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+        }
+        
+        container.appendChild(inputGroup);
+        
+        // 削除ボタンイベントを設定
+        inputGroup.querySelector('.remove-item-btn').addEventListener('click', function() {
+            this.parentElement.remove();
+        });
+        
+        // 追加したフィールドにフォーカスを当てる
+        inputGroup.querySelector('input').focus();
+    }
+
+    // フォームキャンセル処理
+    function handleFormCancel() {
+        if (state.editMode) {
+            renderPage('activity-detail');
+        } else {
+            renderPage('home');
+        }
+    }
+
+    // KPIの配列をチェック
+    function validateKpiObjects(kpis) {
+        if (!Array.isArray(kpis)) return [];
+        
+        return kpis.map(kpi => {
+            if (typeof kpi === 'string') {
+                return {
+                    text: kpi,
+                    deadline: getFutureDateString(10),
+                    completed: false
+                };
+            } else if (typeof kpi === 'object' && kpi !== null) {
+                return {
+                    text: kpi.text || '',
+                    deadline: kpi.deadline || getFutureDateString(10),
+                    completed: kpi.completed === true
+                };
+            } else {
+                return {
+                    text: '',
+                    deadline: getFutureDateString(10),
+                    completed: false
+                };
+            }
+        });
+    }
+    
+    // フォーム送信処理
+    function handleFormSubmit(event) {
+        event.preventDefault();
+        
+        // フォームからデータを取得
+        const name = document.getElementById('activity-name').value;
+        const purpose = document.getElementById('activity-purpose').value;
+        const timeline = document.getElementById('activity-timeline').value;
+        const formProgress = parseInt(document.getElementById('activity-progress').value);
+        
+// KPIを取得
+        const kpis = [];
+        const kpiGroups = document.querySelectorAll('.kpi-input-group');
+        kpiGroups.forEach(group => {
+            const kpiText = group.querySelector('.kpi-input').value.trim();
+            const kpiDate = group.querySelector('.kpi-date-input').value;
+            
+            if (kpiText && kpiDate) {
+                kpis.push({
+                    text: kpiText,
+                    deadline: kpiDate,
+                    completed: false // 新規追加時は未完了
+                });
+            }
+        });
+        
+        // フェーズを取得
+        const phases = [];
+        document.querySelectorAll('.phase-input').forEach(input => {
+            if (input.value.trim()) {
+                phases.push(input.value.trim());
+            }
+        });
+        
+        // タスクを取得
+        const dailyTasks = [];
+        document.querySelectorAll('.task-input').forEach(input => {
+            if (input.value.trim()) {
+                dailyTasks.push(input.value.trim());
+            }
+        });
+        
+        if (state.editMode) {
+            // 活動の編集
+            const activityIndex = state.activities.findIndex(a => a.id === state.currentActivity);
+            if (activityIndex !== -1) {
+                const oldActivity = state.activities[activityIndex];
+                
+                // 既存のKPIのcompleted状態を保持
+                const mergedKpis = kpis.map(newKpi => {
+                    // 既存のKPIで同じテキストを持つものを探す
+                    const existingKpi = oldActivity.kpis.find(k => 
+                        typeof k === 'object' && k.text === newKpi.text
+                    );
+                    
+                    // 既存のKPIが見つかった場合はcompleted状態を引き継ぐ
+                    if (existingKpi) {
+                        return {
+                            ...newKpi,
+                            completed: existingKpi.completed || false
+                        };
+                    }
+                    
+                    return newKpi;
+                });
+                
+                // 進捗度を計算
+                let calculatedProgress;
+                if (mergedKpis.length > 0) {
+                    calculatedProgress = calculateProgressFromKPIs({ kpis: mergedKpis });
+                } else {
+                    calculatedProgress = formProgress;
+                }
+                
+                const updatedActivity = {
+                    ...oldActivity,
+                    name,
+                    purpose,
+                    timeline,
+                    progress: calculatedProgress,
+                    completed: calculatedProgress >= 100 || oldActivity.completed,
+                    notes: oldActivity.notes || '',
+                    kpis: mergedKpis,
+                    phases,
+                    dailyTasks: dailyTasks || [] // タスクがなければ空の配列に
+                };
+                
+                state.activities[activityIndex] = updatedActivity;
+                
+                // 今日のタスクも更新
+                const today = getCurrentDate();
+                if (state.dailyTasks[today]) {
+                    // 古いタスクを削除（定期的なタスクのみ）
+                    state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
+                        task.activityId !== oldActivity.id || !task.isRecurring
+                    );
+                    
+                    // 新しいタスクを追加（定期的なタスク）
+                    if (!updatedActivity.completed) {
+                        dailyTasks.forEach(task => {
+                            state.dailyTasks[today].push({
+                                id: generateId(),
+                                activityId: oldActivity.id,
+                                activityName: name,
+                                name: task,
+                                completed: false,
+                                isRecurring: true
+                            });
+                        });
+                    }
+                }
+                
+                saveData();
+                renderPage('activity-detail');
+            }
+        } else {
+            // 新規活動の追加
+            // 進捗度を計算
+            let calculatedProgress;
+            if (kpis.length > 0) {
+                calculatedProgress = calculateProgressFromKPIs({ kpis });
+            } else {
+                calculatedProgress = formProgress;
+            }
+            
+            const newActivity = {
+                id: generateId(),
+                name,
+                purpose,
+                timeline,
+                progress: calculatedProgress,
+                completed: calculatedProgress >= 100,
+                notes: '',
+                kpis,
+                phases,
+                dailyTasks: dailyTasks || [] // 毎日のタスクが無い場合は空配列に
+            };
+            
+            state.activities.push(newActivity);
+            
+            // 毎日のタスクを今日のタスクに追加（完了していない場合のみ）
+            if (dailyTasks && dailyTasks.length > 0 && !newActivity.completed) {
+                const today = getCurrentDate();
+                if (!state.dailyTasks[today]) {
+                    state.dailyTasks[today] = [];
+                }
+                
+                dailyTasks.forEach(task => {
+                    state.dailyTasks[today].push({
+                        id: generateId(),
+                        activityId: newActivity.id,
+                        activityName: name,
+                        name: task,
+                        completed: false,
+                        isRecurring: true
+                    });
+                });
+            }
+            
+            saveData();
+            state.currentActivity = newActivity.id;
+            renderPage('home');
+        }
+    }
+
+    // =====================
+    // イベントリスナー設定
+    // =====================
+    
+    // 主要なイベントリスナーを設定する関数
+    function setupEventListeners() {
+        // ウィンドウのリサイズイベント
+        window.addEventListener('resize', function() {
+            // 必要に応じてレスポンシブ対応のコード
+        });
+    }
+
+    // ナビゲーションのイベントリスナーを設定する関数
+    function setupNavigationListeners() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                const page = this.dataset.page;
+                
+                // ホームページでのセクションジャンプ処理
+                if (state.currentPage === 'home' && page !== 'daily-tasks' && page !== 'kpi-list' && page !== 'activity-form' && page !== 'dashboard') {
+                    // ページ内のセクションにスクロール
+                    const section = document.getElementById(page);
+                    if (section) {
+                        // 目次リンクのアクティブ状態を更新
+                        navLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // URLにハッシュを追加してブックマークしやすくする
+                        window.history.pushState(null, null, `#${page}`);
+                        
+                        // スムーズにスクロール
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        return;
+                    }
+                }
+                
+                // 同じページの場合は何もしない（ホームページのセクションジャンプを除く）
+                if (page === state.currentPage) return;
+                
+                // アクティブなリンクを更新
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                
+                // ページ遷移
+                renderPage(page);
+            });
+        });
+    }
+});
