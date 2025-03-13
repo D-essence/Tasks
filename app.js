@@ -377,6 +377,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         `;
         document.head.appendChild(style);
+
+    // ここにKPI一覧のスタイル追加関数を呼び出し
+　   　　 addKpiListStyles();
         
         renderPage(state.currentPage);
         setupEventListeners();
@@ -487,6 +490,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 appContainer.appendChild(document.importNode(template.content, true));
                 renderDailyTasks();
                 break;
+            case 'kpi-list':
+       　　　　　　template = document.getElementById('kpi-list-template');
+        　　　　　appContainer.appendChild(document.importNode(template.content, true));
+        　　　　　renderKpiList();
+        　　　　　break;
             case 'activity-form':
                 template = document.getElementById('activity-form-template');
                 appContainer.appendChild(document.importNode(template.content, true));
@@ -1238,6 +1246,406 @@ document.addEventListener('DOMContentLoaded', function() {
                 cutout: '70%'
             }
         });
+    }
+
+    // KPI一覧ページをレンダリングする関数
+function renderKpiList() {
+    updateCurrentDate();
+    updateLastUpdated();
+    
+    // KPIの配列を作成
+    const allKpis = [];
+    
+    // 各事業のKPIを抽出
+    state.activities.forEach(activity => {
+        if (Array.isArray(activity.kpis)) {
+            activity.kpis.forEach(kpi => {
+                if (typeof kpi === 'object' && kpi !== null) {
+                    allKpis.push({
+                        id: generateId(), // 一意のIDを生成
+                        activityId: activity.id,
+                        activityName: activity.name,
+                        text: kpi.text,
+                        deadline: kpi.deadline,
+                        completed: kpi.completed
+                    });
+                }
+            });
+        }
+    });
+    
+    // 残り日数でソート（未完了のものを優先、次に残り日数の少ない順）
+    allKpis.sort((a, b) => {
+        // 完了済みとそうでないものを分ける
+        if (a.completed && !b.completed) return 1;
+        if (!a.completed && b.completed) return -1;
+        
+        // どちらも未完了の場合は残り日数で比較
+        if (!a.completed && !b.completed) {
+            const daysRemainingA = calculateDaysRemaining(a.deadline);
+            const daysRemainingB = calculateDaysRemaining(b.deadline);
+            
+            // 期限切れは上位に
+            if (daysRemainingA < 0 && daysRemainingB >= 0) return -1;
+            if (daysRemainingA >= 0 && daysRemainingB < 0) return 1;
+            
+            // 残り日数の少ない順
+            return daysRemainingA - daysRemainingB;
+        }
+        
+        // どちらも完了済みの場合は事業名でソート
+        return a.activityName.localeCompare(b.activityName);
+    });
+    
+    // KPI達成状況を更新
+    const totalKpis = allKpis.length;
+    const completedKpis = allKpis.filter(kpi => kpi.completed).length;
+    const completionPercentage = totalKpis > 0 ? (completedKpis / totalKpis) * 100 : 0;
+    
+    // カウント更新
+    document.getElementById('total-kpi-count').textContent = totalKpis;
+    document.getElementById('kpi-completed-count').textContent = completedKpis;
+    
+    // 進捗バー更新
+    const progressBar = document.getElementById('kpi-completion-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${completionPercentage}%`;
+    }
+    
+    // 日付を更新
+    const currentDateElement = document.getElementById('kpi-current-date');
+    if (currentDateElement) {
+        const today = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        currentDateElement.textContent = today.toLocaleDateString('ja-JP', options);
+    }
+    
+    // KPI一覧コンテナを取得
+    const kpiContainer = document.getElementById('kpi-list-container');
+    kpiContainer.innerHTML = '';
+    
+    // グリッドコンテナを作成
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'kpi-grid';
+    kpiContainer.appendChild(gridContainer);
+    
+    // KPIが無い場合のメッセージ
+    if (allKpis.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'empty-list-message';
+        emptyMessage.textContent = 'KPIはありません';
+        gridContainer.appendChild(emptyMessage);
+    } else {
+        // KPIカードを作成
+        allKpis.forEach(kpi => {
+            const kpiCard = createKpiCard(kpi);
+            gridContainer.appendChild(kpiCard);
+        });
+    }
+    
+    // フィルターボタンのイベントリスナーを設定
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            const filter = button.dataset.filter;
+            filterKpis(filter);
+        });
+    });
+    
+    // フッターの更新日時を更新
+    document.getElementById('kpi-footer-last-updated').textContent = 
+        document.getElementById('last-updated-date').textContent;
+}
+
+// KPIカードを作成する関数
+function createKpiCard(kpi) {
+    const card = document.createElement('div');
+    card.className = `kpi-card ${kpi.completed ? 'kpi-completed' : ''}`;
+    card.dataset.id = kpi.id;
+    card.dataset.activityId = kpi.activityId;
+    
+    // 残り日数を計算
+    const daysRemaining = calculateDaysRemaining(kpi.deadline);
+    let deadlineClass = '';
+    let deadlineText = '';
+    
+    if (kpi.completed) {
+        deadlineClass = 'deadline-completed';
+        deadlineText = '達成済み';
+    } else if (daysRemaining < 0) {
+        deadlineClass = 'deadline-expired';
+        deadlineText = `期限切れ (${Math.abs(daysRemaining)}日経過)`;
+    } else if (daysRemaining === 0) {
+        deadlineClass = 'deadline-today';
+        deadlineText = '本日期限';
+    } else if (daysRemaining <= 3) {
+        deadlineClass = 'deadline-urgent';
+        deadlineText = `残り ${daysRemaining} 日`;
+    } else if (daysRemaining <= 7) {
+        deadlineClass = 'deadline-warning';
+        deadlineText = `残り ${daysRemaining} 日`;
+    } else {
+        deadlineClass = 'deadline-normal';
+        deadlineText = `残り ${daysRemaining} 日`;
+    }
+    
+    // 日付フォーマット
+    const deadlineDate = new Date(kpi.deadline);
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
+    
+    card.innerHTML = `
+        <div class="kpi-card-content">
+            <div class="kpi-checkbox-container">
+                <input type="checkbox" class="kpi-checkbox" ${kpi.completed ? 'checked' : ''}>
+            </div>
+            <div class="kpi-info">
+                <div class="kpi-text ${kpi.completed ? 'completed-text' : ''}">${kpi.text}</div>
+                <div class="kpi-activity">${kpi.activityName}</div>
+            </div>
+            <div class="kpi-deadline-container">
+                <div class="kpi-deadline ${deadlineClass}">${deadlineText}</div>
+                <div class="kpi-date">${formattedDate}</div>
+            </div>
+        </div>
+    `;
+    
+    // チェックボックスのイベントリスナーを設定
+    const checkbox = card.querySelector('.kpi-checkbox');
+    checkbox.addEventListener('change', () => {
+        toggleKpiCompletion(kpi.activityId, kpi.text, checkbox.checked);
+        card.classList.toggle('kpi-completed', checkbox.checked);
+        card.querySelector('.kpi-text').classList.toggle('completed-text', checkbox.checked);
+        
+        // 達成状況を更新
+        updateKpiCompletionStats();
+    });
+    
+    // カードクリックで詳細ページへ遷移（チェックボックス以外をクリックした場合）
+    card.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('kpi-checkbox')) {
+            state.currentActivity = kpi.activityId;
+            renderPage('activity-detail');
+        }
+    });
+    
+    return card;
+}
+
+// KPI達成状況統計を更新する関数
+function updateKpiCompletionStats() {
+    const kpiCards = document.querySelectorAll('.kpi-card');
+    const totalKpis = kpiCards.length;
+    const completedKpis = document.querySelectorAll('.kpi-card.kpi-completed').length;
+    const completionPercentage = totalKpis > 0 ? (completedKpis / totalKpis) * 100 : 0;
+    
+    // カウント更新
+    document.getElementById('total-kpi-count').textContent = totalKpis;
+    document.getElementById('kpi-completed-count').textContent = completedKpis;
+    
+    // 進捗バー更新
+    const progressBar = document.getElementById('kpi-completion-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${completionPercentage}%`;
+    }
+}
+
+// KPIフィルタリング関数
+function filterKpis(filter) {
+    const kpiCards = document.querySelectorAll('.kpi-card');
+    
+    kpiCards.forEach(card => {
+        switch (filter) {
+            case 'completed':
+                card.style.display = card.classList.contains('kpi-completed') ? 'block' : 'none';
+                break;
+            case 'pending':
+                card.style.display = !card.classList.contains('kpi-completed') ? 'block' : 'none';
+                break;
+            default:
+                card.style.display = 'block';
+                break;
+        }
+    });
+}
+
+// KPI完了状態を切り替える関数
+function toggleKpiCompletion(activityId, kpiText, isCompleted) {
+    const activity = getActivityById(activityId);
+    if (!activity || !Array.isArray(activity.kpis)) return;
+    
+    // KPIを検索
+    const kpiIndex = activity.kpis.findIndex(kpi => 
+        typeof kpi === 'object' && kpi !== null && kpi.text === kpiText
+    );
+    
+    if (kpiIndex !== -1) {
+        // KPIの完了状態を更新
+        activity.kpis[kpiIndex].completed = isCompleted;
+        
+        // 進捗度を再計算
+        activity.progress = calculateProgressFromKPIs(activity);
+        
+        // 100%の場合は完了フラグも設定
+        if (activity.progress >= 100) {
+            activity.completed = true;
+            // 完了した事業のタスクを今日のタスクから削除
+            removeCompletedActivityTasks(activity.id);
+        } else {
+            activity.completed = false;
+        }
+        
+        // データを保存
+        saveData();
+    }
+}
+
+// 残り日数を計算する関数
+function calculateDaysRemaining(deadline) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const deadlineDate = new Date(deadline);
+    deadlineDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+}
+
+// ページレンダリング関数を修正して、KPI一覧ページをサポート
+// renderPage関数のcase文に追加
+/* 以下のコードをrenderPage関数のswitch文内に追加してください
+case 'kpi-list':
+    template = document.getElementById('kpi-list-template');
+    appContainer.appendChild(document.importNode(template.content, true));
+    renderKpiList();
+    break;
+*/
+
+// CSSスタイルを追加するために、下記のコードを実行（DOMロード時に一度だけ）
+function addKpiListStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            width: 100%;
+        }
+        
+        .kpi-card {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            padding: 1rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-card.kpi-completed {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .kpi-card-content {
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .kpi-checkbox-container {
+            margin-right: 0.8rem;
+        }
+        
+        .kpi-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+        
+        .kpi-info {
+            flex: 1;
+        }
+        
+        .kpi-text {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+        
+        .completed-text {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+        
+        .kpi-activity {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .kpi-deadline-container {
+            text-align: right;
+            min-width: 100px;
+            margin-left: 0.5rem;
+        }
+        
+        .kpi-deadline {
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 0.3rem;
+        }
+        
+        .kpi-date {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .deadline-completed {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .deadline-expired {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .deadline-today {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .deadline-urgent {
+            background-color: var(--warning-color);
+            color: var(--text-color);
+        }
+        
+        .deadline-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .deadline-normal {
+            background-color: var(--accent-light);
+            color: var(--accent-color);
+        }
+    `;
+    document.head.appendChild(style);
     }
 
     // 今日のタスク一覧ページをレンダリングする関数
