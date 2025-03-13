@@ -1504,12 +1504,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (daysRemaining < 0) {
                 timeStatus = '期限切れ';
                 timeClass = 'expired';
-            } else if (daysRemaining === 0) {
-                timeStatus = '今日が期限';
-                timeClass = 'today';
-            } else if (daysRemaining <= 3) {
-                timeStatus = `残り ${daysRemaining}日`;
-                timeClass = 'urgent';
             } else if (daysRemaining <= 7) {
                 timeStatus = `残り ${daysRemaining}日`;
                 timeClass = 'warning';
