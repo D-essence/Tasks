@@ -2281,3 +2281,4 @@ document.addEventListener('DOMContentLoaded', function() {
             default:
                 return;
         }
+}
