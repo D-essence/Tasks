@@ -242,18 +242,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // 初期タスク状態の作成
         const initialDailyTasks = {};
         const today = new Date().toISOString().split('T')[0];
-        
+
         initialActivities.forEach(activity => {
-            if (activity.dailyTasks && activity.dailyTasks.length > 0) {
-                activity.dailyTasks.forEach(task => {
-                    const taskId = generateId();
-                    if (!initialDailyTasks[today]) {
-                        initialDailyTasks[today] = [];
-                    }
+    if (activity.dailyTasks && activity.dailyTasks.length > 0) {
+        activity.dailyTasks.forEach(task => {
+            const taskId = generateId();
+            if (!initialDailyTasks[today]) {
+                initialDailyTasks[today] = [];
+            }
+            initialDailyTasks[today].push({
+                id: taskId,
+                activityId: activity.id,
+                activityName: activity.name,
+                name: task,
+                completed: false,
+                isRecurring: true
+            });
+        });
+    }
+});
         
         saveData();
         renderActivityDetail();
-    }
     
     // 日付の妥当性をチェックする関数
     function isValidDate(dateString) {
