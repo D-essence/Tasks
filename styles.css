@@ -1540,6 +1540,14 @@ body {
     background-color: var(--danger-color);
 }
 
+.kpi-deadline.today {
+    background-color: var(--accent-color);
+}
+
+.kpi-deadline.urgent {
+    background-color: #e74c3c;
+}
+
 .kpi-deadline.warning {
     background-color: var(--warning-color);
 }
