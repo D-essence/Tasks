@@ -31,240 +31,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // データを初期化する関数
     function initializeData() {
-        // 初期データを作成
-        const initialActivities = [
-            {
-                id: generateId(),
-                name: 'ホスト',
-                purpose: '小遣い稼ぎ、気分転換',
-                timeline: 'short-term',
-                progress: 0,
-                completed: false,
-                notes: '',
-                kpis: [
-                    { text: '毎月50万円の売上', deadline: getFutureDateString(10), completed: false },
-                    { text: '常連客5人確保', deadline: getFutureDateString(10), completed: false }
-                ],
-                phases: ['客層リサーチ', '最適な店舗選び', '接客スキル向上', '常連獲得'],
-                dailyTasks: ['LINEで顧客フォロー', '営業日の確認', '自己PRの改善']
-            },
-            {
-                id: generateId(),
-                name: '権威性インスタ',
-                purpose: '交流',
-                timeline: 'short-term',
-                progress: 0,
-                completed: false,
-                kpis: [
-                    { text: 'フォロワー1000人', deadline: getFutureDateString(10), completed: false },
-                    { text: '週5投稿', deadline: getFutureDateString(10), completed: false },
-                    { text: '業界内認知度向上', deadline: getFutureDateString(10), completed: false }
-                ],
-                phases: ['コンセプト決め', 'プロフィール最適化', 'コンテンツ制作', 'エンゲージメント獲得'],
-                dailyTasks: ['ストーリー投稿', '同業者とのDM交流', 'コメント返信']
-            },
-            {
-                id: generateId(),
-                name: 'ネカマ',
-                purpose: 'アカウント育成、小遣い稼ぎ',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['毎月30万円の収益', 'リピーター10人確保', 'リスク回避率100%'],
-                phases: ['プロフィール設定', '写真収集', 'メッセージング戦略', '収益化'],
-                dailyTasks: ['メッセージ確認と返信', 'プロフィール更新', '新規顧客開拓']
-            },
-            {
-                id: generateId(),
-                name: 'Berserk',
-                purpose: '1億円弱の収益獲得',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['年間8000万円の収益', '安定的なキャッシュフロー確立', 'リスク分散'],
-                phases: ['市場調査', '戦略策定', '実行計画作成', '運用開始', '収益最大化'],
-                dailyTasks: ['市場動向チェック', '収支確認', 'リスク管理']
-            },
-            {
-                id: generateId(),
-                name: '嬢向け顧客管理アプリ',
-                purpose: '月100万円以上の収入源確立',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['ユーザー100人獲得', '月額収益100万円達成', 'アプリ完成度90%以上'],
-                phases: ['要件定義', 'UI/UXデザイン', 'バックエンド開発', 'フロントエンド開発', 'テスト運用', '正式リリース'],
-                dailyTasks: ['開発作業', 'ユーザーフィードバック収集', '改善点リストアップ']
-            },
-            {
-                id: generateId(),
-                name: 'Dear Princess',
-                purpose: '小遣い稼ぎ、気分転換',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: [
-                    { text: '月収30万円', deadline: getFutureDateString(10) },
-                    { text: '常連顧客5人', deadline: getFutureDateString(10) },
-                    { text: '自己ブランディング確立', deadline: getFutureDateString(10) }
-                ],
-                phases: ['コンセプト設計', '集客戦略', 'サービス提供開始', 'リピーター獲得'],
-                dailyTasks: ['SNS更新', '顧客対応', 'サービス内容改善']
-            },
-            {
-                id: generateId(),
-                name: 'Dolce Prince',
-                purpose: 'ゴミ拾いによる臨時収入',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['月収50万円', '効率的な回収ルート確立', '継続可能な事業モデル構築'],
-                phases: ['エリア調査', '回収手法確立', '販売ルート確保', '事業最適化'],
-                dailyTasks: ['ルート確認', '価格変動チェック', '効率分析']
-            },
-            {
-                id: generateId(),
-                name: 'N\'s Secret',
-                purpose: '人脈拡大、生涯事業',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['コアメンバー10人獲得', '月間イベント1回以上', '信頼関係構築'],
-                phases: ['コンセプト確立', 'メンバー勧誘', '活動スタート', 'コミュニティ拡大'],
-                dailyTasks: ['メンバーとのコミュニケーション', 'イベント企画', '人脈開拓']
-            },
-            {
-                id: generateId(),
-                name: '新歓事業',
-                purpose: '小遣い稼ぎ、気分転換',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['参加者100人獲得', '利益100万円', '人脈拡大'],
-                phases: ['企画立案', '会場確保', '広報活動', '実施', '振り返り'],
-                dailyTasks: ['広報活動', '参加者フォロー', '運営準備']
-            },
-            {
-                id: generateId(),
-                name: '進捗管理ツール開発',
-                purpose: '今後の活動全般のため',
-                timeline: 'short-term',
-                progress: 0,
-                kpis: ['全事業の一元管理', '進捗可視化100%', '使いやすさ向上'],
-                phases: ['要件定義', 'UI設計', '開発', 'テスト', 'リリース'],
-                dailyTasks: ['機能開発', 'UI改善', 'データ整理']
-            },
-            {
-                id: generateId(),
-                name: 'こけし組合',
-                purpose: '仲間集め、組織拡大、生涯事業',
-                timeline: 'medium-term',
-                progress: 0,
-                kpis: ['メンバー20人獲得', '月次ミーティング実施率100%', '収益事業2つ立ち上げ'],
-                phases: ['コンセプト策定', 'メンバー募集', '組織構築', '活動開始', '事業多角化'],
-                dailyTasks: ['メンバーコミュニケーション', '組織構造検討', '活動計画策定']
-            },
-            {
-                id: generateId(),
-                name: 'Princess Lens',
-                purpose: '月1000万円以上の収入源確立',
-                timeline: 'medium-term',
-                progress: 0,
-                kpis: ['月収1000万円', '顧客満足度90%以上', 'ブランド認知度向上'],
-                phases: ['市場調査', 'ビジネスモデル策定', '初期投資', '事業開始', 'スケール化'],
-                dailyTasks: ['市場分析', '競合調査', '事業計画見直し', '収益モデル検討']
-            },
-            {
-                id: generateId(),
-                name: '合法エロサイト運営',
-                purpose: '挑戦、小遣い稼ぎ',
-                timeline: 'medium-term',
-                progress: 0,
-                kpis: ['月間PV10万達成', '月収50万円', 'コンテンツ100記事公開'],
-                phases: ['サイト設計', 'コンテンツ制作', 'SEO対策', '収益化', 'スケール'],
-                dailyTasks: ['コンテンツ作成', 'SEO確認', 'アクセス解析', '収益最適化']
-            },
-            {
-                id: generateId(),
-                name: '男女平等サロン',
-                purpose: '小遣い稼ぎ、お遊び',
-                timeline: 'medium-term',
-                progress: 0,
-                kpis: ['会員50人獲得', '月収100万円', 'イベント満足度90%以上'],
-                phases: ['コンセプト策定', '場所確保', 'メンバー募集', 'イベント企画', '運営開始'],
-                dailyTasks: ['メンバー対応', 'イベント企画', '集客活動', '運営改善']
-            },
-            {
-                id: generateId(),
-                name: 'Tinder模倣事業',
-                purpose: '経験、挑戦',
-                timeline: 'long-term',
-                progress: 0,
-                kpis: ['ユーザー1000人獲得', 'マッチング成立数100/日', '収益化モデル確立'],
-                phases: ['市場調査', 'アプリ設計', '開発', 'テスト', 'マーケティング', 'ローンチ'],
-                dailyTasks: ['競合分析', '機能設計', '開発進捗確認', 'マーケティング戦略検討']
-            },
-            {
-                id: generateId(),
-                name: '高級焼肉事業',
-                purpose: '挑戦、思い出作り',
-                timeline: 'long-term',
-                progress: 0,
-                kpis: ['月商1000万円', '客単価2万円', 'リピート率30%'],
-                phases: ['コンセプト策定', '立地調査', 'メニュー開発', '内装設計', '人材確保', 'オープン'],
-                dailyTasks: ['市場調査', '競合店分析', '立地検討', 'メニュー考案']
-            },
-            {
-                id: generateId(),
-                name: 'ブランドお茶ボトル事業',
-                purpose: '挑戦、思い出作り',
-                timeline: 'long-term',
-                progress: 0,
-                kpis: ['月間販売数1000本', 'SNSフォロワー5000人獲得', '小売店舗30店舗での取り扱い'],
-                phases: ['商品開発', 'ブランディング', 'パッケージデザイン', '生産体制構築', '販路開拓', '販売開始'],
-                dailyTasks: ['競合リサーチ', 'デザイン検討', 'パートナー候補調査', 'ブランドコンセプト検討']
-            },
-            {
-                id: generateId(),
-                name: '声カテ配信',
-                purpose: '気分転換',
-                timeline: 'long-term',
-                progress: 0,
-                kpis: ['チャンネル登録者1000人', '月間再生数5000回', 'ファン獲得10人'],
-                phases: ['コンテンツ企画', '機材準備', '配信テスト', '本格配信開始', 'コミュニティ形成'],
-                dailyTasks: ['コンテンツアイデア出し', '競合配信者研究', '機材選定', '配信テスト']
-            },
-            {
-                id: generateId(),
-                name: '完全ネカマLLM',
-                purpose: '挑戦、研究開発',
-                timeline: 'long-term',
-                progress: 0,
-                kpis: ['AIモデル完成度90%', 'テストユーザー満足度80%', '商用化可能性の確立'],
-                phases: ['要件定義', 'データ収集', 'モデル構築', '学習', 'テスト', '最適化', 'リリース'],
-                dailyTasks: ['AI研究', 'データ収集方法検討', 'モデル構造設計', '実装計画策定']
-            }
-        ];
-
-        // 初期タスク状態の作成
-        const initialDailyTasks = {};
-        const today = new Date().toISOString().split('T')[0];
-        
-        initialActivities.forEach(activity => {
-            if (activity.dailyTasks && activity.dailyTasks.length > 0) {
-                activity.dailyTasks.forEach(task => {
-                    const taskId = generateId();
-                    if (!initialDailyTasks[today]) {
-                        initialDailyTasks[today] = [];
-                    }
-                    initialDailyTasks[today].push({
-                        id: taskId,
-                        activityId: activity.id,
-                        activityName: activity.name,
-                        name: task,
-                        completed: false,
-                        isRecurring: true // タスクが毎日のタスクかどうかを示すフラグ
-                    });
-                });
-            }
-        });
-
+        // 初期データは空で返す
         return {
-            activities: initialActivities,
-            dailyTasks: initialDailyTasks
+            activities: [],
+            dailyTasks: {}
         };
     }
 
@@ -351,8 +121,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         const formattedDate = now.toLocaleDateString('ja-JP', options);
         
-        // ホームページの更新日時を更新
-        const lastUpdatedElements = document.querySelectorAll('#last-updated-date, #footer-last-updated, #detail-last-updated, #detail-footer-last-updated, #tasks-footer-last-updated');
+        // 各ページの更新日時を更新
+        const lastUpdatedElements = document.querySelectorAll('#last-updated-date, #footer-last-updated, #detail-last-updated, #detail-footer-last-updated, #tasks-footer-last-updated, #kpi-footer-last-updated');
         lastUpdatedElements.forEach(element => {
             if (element) {
                 element.textContent = formattedDate;
@@ -377,9 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         `;
         document.head.appendChild(style);
-
-    // ここにKPI一覧のスタイル追加関数を呼び出し
-　   　　 addKpiListStyles();
+        
+        // KPI一覧用のスタイルを追加
+        addKpiListStyles();
         
         renderPage(state.currentPage);
         setupEventListeners();
@@ -491,10 +261,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderDailyTasks();
                 break;
             case 'kpi-list':
-       　　　　　　template = document.getElementById('kpi-list-template');
-        　　　　　appContainer.appendChild(document.importNode(template.content, true));
-        　　　　　renderKpiList();
-        　　　　　break;
+                template = document.getElementById('kpi-list-template');
+                appContainer.appendChild(document.importNode(template.content, true));
+                renderKpiList();
+                break;
             case 'activity-form':
                 template = document.getElementById('activity-form-template');
                 appContainer.appendChild(document.importNode(template.content, true));
@@ -1034,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 期限が近いKPI（7日以内）
         const upcomingKPIs = [];
         state.activities.forEach(activity => {
-            if (Array.isArray(activity.kpis)) {
+            if (Array.isArray(activity.kpis) && !activity.completed) {
                 activity.kpis.forEach(kpi => {
                     if (typeof kpi === 'object' && kpi !== null && kpi.deadline && !kpi.completed) {
                         const deadline = new Date(kpi.deadline);
@@ -1249,403 +1019,405 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // KPI一覧ページをレンダリングする関数
-function renderKpiList() {
-    updateCurrentDate();
-    updateLastUpdated();
-    
-    // KPIの配列を作成
-    const allKpis = [];
-    
-    // 各事業のKPIを抽出
-    state.activities.forEach(activity => {
-        if (Array.isArray(activity.kpis)) {
-            activity.kpis.forEach(kpi => {
-                if (typeof kpi === 'object' && kpi !== null) {
-                    allKpis.push({
-                        id: generateId(), // 一意のIDを生成
-                        activityId: activity.id,
-                        activityName: activity.name,
-                        text: kpi.text,
-                        deadline: kpi.deadline,
-                        completed: kpi.completed
-                    });
-                }
+    function renderKpiList() {
+        updateCurrentDate();
+        updateLastUpdated();
+        
+        // KPIの配列を作成
+        const allKpis = [];
+        
+        // 各事業のKPIを抽出（完了済み事業のKPIは除外）
+        state.activities.forEach(activity => {
+            // 完了済み事業のKPIは除外
+            if (activity.completed || activity.progress >= 100) {
+                return;
+            }
+            
+            if (Array.isArray(activity.kpis)) {
+                activity.kpis.forEach(kpi => {
+                    if (typeof kpi === 'object' && kpi !== null) {
+                        allKpis.push({
+                            id: generateId(), // 一意のIDを生成
+                            activityId: activity.id,
+                            activityName: activity.name,
+                            text: kpi.text,
+                            deadline: kpi.deadline,
+                            completed: kpi.completed
+                        });
+                    }
+                });
+            }
+        });
+        
+        // 残り日数でソート（未完了のものを優先、次に残り日数の少ない順）
+        allKpis.sort((a, b) => {
+            // 完了済みとそうでないものを分ける
+            if (a.completed && !b.completed) return 1;
+            if (!a.completed && b.completed) return -1;
+            
+            // どちらも未完了の場合は残り日数で比較
+            if (!a.completed && !b.completed) {
+                const daysRemainingA = calculateDaysRemaining(a.deadline);
+                const daysRemainingB = calculateDaysRemaining(b.deadline);
+                
+                // 期限切れは上位に
+                if (daysRemainingA < 0 && daysRemainingB >= 0) return -1;
+                if (daysRemainingA >= 0 && daysRemainingB < 0) return 1;
+                
+                // 残り日数の少ない順
+                return daysRemainingA - daysRemainingB;
+            }
+            
+            // どちらも完了済みの場合は事業名でソート
+            return a.activityName.localeCompare(b.activityName);
+        });
+        
+        // KPI達成状況を更新
+        const totalKpis = allKpis.length;
+        const completedKpis = allKpis.filter(kpi => kpi.completed).length;
+        const completionPercentage = totalKpis > 0 ? (completedKpis / totalKpis) * 100 : 0;
+        
+        // カウント更新
+        document.getElementById('total-kpi-count').textContent = totalKpis;
+        document.getElementById('kpi-completed-count').textContent = completedKpis;
+        
+        // 進捗バー更新
+        const progressBar = document.getElementById('kpi-completion-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${completionPercentage}%`;
+        }
+        
+        // 日付を更新
+        const currentDateElement = document.getElementById('kpi-current-date');
+        if (currentDateElement) {
+            const today = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            currentDateElement.textContent = today.toLocaleDateString('ja-JP', options);
+        }
+        
+        // KPI一覧コンテナを取得
+        const kpiContainer = document.getElementById('kpi-list-container');
+        kpiContainer.innerHTML = '';
+        
+        // グリッドコンテナを作成
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'kpi-grid';
+        kpiContainer.appendChild(gridContainer);
+        
+        // KPIが無い場合のメッセージ
+        if (allKpis.length === 0) {
+            const emptyMessage = document.createElement('div');
+            emptyMessage.className = 'empty-list-message';
+            emptyMessage.textContent = 'KPIはありません';
+            gridContainer.appendChild(emptyMessage);
+        } else {
+            // KPIカードを作成
+            allKpis.forEach(kpi => {
+                const kpiCard = createKpiCard(kpi);
+                gridContainer.appendChild(kpiCard);
             });
         }
-    });
-    
-    // 残り日数でソート（未完了のものを優先、次に残り日数の少ない順）
-    allKpis.sort((a, b) => {
-        // 完了済みとそうでないものを分ける
-        if (a.completed && !b.completed) return 1;
-        if (!a.completed && b.completed) return -1;
         
-        // どちらも未完了の場合は残り日数で比較
-        if (!a.completed && !b.completed) {
-            const daysRemainingA = calculateDaysRemaining(a.deadline);
-            const daysRemainingB = calculateDaysRemaining(b.deadline);
-            
-            // 期限切れは上位に
-            if (daysRemainingA < 0 && daysRemainingB >= 0) return -1;
-            if (daysRemainingA >= 0 && daysRemainingB < 0) return 1;
-            
-            // 残り日数の少ない順
-            return daysRemainingA - daysRemainingB;
-        }
-        
-        // どちらも完了済みの場合は事業名でソート
-        return a.activityName.localeCompare(b.activityName);
-    });
-    
-    // KPI達成状況を更新
-    const totalKpis = allKpis.length;
-    const completedKpis = allKpis.filter(kpi => kpi.completed).length;
-    const completionPercentage = totalKpis > 0 ? (completedKpis / totalKpis) * 100 : 0;
-    
-    // カウント更新
-    document.getElementById('total-kpi-count').textContent = totalKpis;
-    document.getElementById('kpi-completed-count').textContent = completedKpis;
-    
-    // 進捗バー更新
-    const progressBar = document.getElementById('kpi-completion-progress-bar');
-    if (progressBar) {
-        progressBar.style.width = `${completionPercentage}%`;
-    }
-    
-    // 日付を更新
-    const currentDateElement = document.getElementById('kpi-current-date');
-    if (currentDateElement) {
-        const today = new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-        currentDateElement.textContent = today.toLocaleDateString('ja-JP', options);
-    }
-    
-    // KPI一覧コンテナを取得
-    const kpiContainer = document.getElementById('kpi-list-container');
-    kpiContainer.innerHTML = '';
-    
-    // グリッドコンテナを作成
-    const gridContainer = document.createElement('div');
-    gridContainer.className = 'kpi-grid';
-    kpiContainer.appendChild(gridContainer);
-    
-    // KPIが無い場合のメッセージ
-    if (allKpis.length === 0) {
-        const emptyMessage = document.createElement('div');
-        emptyMessage.className = 'empty-list-message';
-        emptyMessage.textContent = 'KPIはありません';
-        gridContainer.appendChild(emptyMessage);
-    } else {
-        // KPIカードを作成
-        allKpis.forEach(kpi => {
-            const kpiCard = createKpiCard(kpi);
-            gridContainer.appendChild(kpiCard);
+        // フィルターボタンのイベントリスナーを設定
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const filter = button.dataset.filter;
+                filterKpis(filter);
+            });
         });
-    }
-    
-    // フィルターボタンのイベントリスナーを設定
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            const filter = button.dataset.filter;
-            filterKpis(filter);
-        });
-    });
-    
-    // フッターの更新日時を更新
-    document.getElementById('kpi-footer-last-updated').textContent = 
-        document.getElementById('last-updated-date').textContent;
-}
-
-// KPIカードを作成する関数
-function createKpiCard(kpi) {
-    const card = document.createElement('div');
-    card.className = `kpi-card ${kpi.completed ? 'kpi-completed' : ''}`;
-    card.dataset.id = kpi.id;
-    card.dataset.activityId = kpi.activityId;
-    
-    // 残り日数を計算
-    const daysRemaining = calculateDaysRemaining(kpi.deadline);
-    let deadlineClass = '';
-    let deadlineText = '';
-    
-    if (kpi.completed) {
-        deadlineClass = 'deadline-completed';
-        deadlineText = '達成済み';
-    } else if (daysRemaining < 0) {
-        deadlineClass = 'deadline-expired';
-        deadlineText = `期限切れ (${Math.abs(daysRemaining)}日経過)`;
-    } else if (daysRemaining === 0) {
-        deadlineClass = 'deadline-today';
-        deadlineText = '本日期限';
-    } else if (daysRemaining <= 3) {
-        deadlineClass = 'deadline-urgent';
-        deadlineText = `残り ${daysRemaining} 日`;
-    } else if (daysRemaining <= 7) {
-        deadlineClass = 'deadline-warning';
-        deadlineText = `残り ${daysRemaining} 日`;
-    } else {
-        deadlineClass = 'deadline-normal';
-        deadlineText = `残り ${daysRemaining} 日`;
-    }
-    
-    // 日付フォーマット
-    const deadlineDate = new Date(kpi.deadline);
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
-    
-    card.innerHTML = `
-        <div class="kpi-card-content">
-            <div class="kpi-checkbox-container">
-                <input type="checkbox" class="kpi-checkbox" ${kpi.completed ? 'checked' : ''}>
-            </div>
-            <div class="kpi-info">
-                <div class="kpi-text ${kpi.completed ? 'completed-text' : ''}">${kpi.text}</div>
-                <div class="kpi-activity">${kpi.activityName}</div>
-            </div>
-            <div class="kpi-deadline-container">
-                <div class="kpi-deadline ${deadlineClass}">${deadlineText}</div>
-                <div class="kpi-date">${formattedDate}</div>
-            </div>
-        </div>
-    `;
-    
-    // チェックボックスのイベントリスナーを設定
-    const checkbox = card.querySelector('.kpi-checkbox');
-    checkbox.addEventListener('change', () => {
-        toggleKpiCompletion(kpi.activityId, kpi.text, checkbox.checked);
-        card.classList.toggle('kpi-completed', checkbox.checked);
-        card.querySelector('.kpi-text').classList.toggle('completed-text', checkbox.checked);
         
-        // 達成状況を更新
-        updateKpiCompletionStats();
-    });
-    
-    // カードクリックで詳細ページへ遷移（チェックボックス以外をクリックした場合）
-    card.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('kpi-checkbox')) {
-            state.currentActivity = kpi.activityId;
-            renderPage('activity-detail');
-        }
-    });
-    
-    return card;
-}
-
-// KPI達成状況統計を更新する関数
-function updateKpiCompletionStats() {
-    const kpiCards = document.querySelectorAll('.kpi-card');
-    const totalKpis = kpiCards.length;
-    const completedKpis = document.querySelectorAll('.kpi-card.kpi-completed').length;
-    const completionPercentage = totalKpis > 0 ? (completedKpis / totalKpis) * 100 : 0;
-    
-    // カウント更新
-    document.getElementById('total-kpi-count').textContent = totalKpis;
-    document.getElementById('kpi-completed-count').textContent = completedKpis;
-    
-    // 進捗バー更新
-    const progressBar = document.getElementById('kpi-completion-progress-bar');
-    if (progressBar) {
-        progressBar.style.width = `${completionPercentage}%`;
+        // フッターの更新日時を更新
+        document.getElementById('kpi-footer-last-updated').textContent = 
+            document.getElementById('last-updated-date').textContent;
     }
-}
 
-// KPIフィルタリング関数
-function filterKpis(filter) {
-    const kpiCards = document.querySelectorAll('.kpi-card');
-    
-    kpiCards.forEach(card => {
-        switch (filter) {
-            case 'completed':
-                card.style.display = card.classList.contains('kpi-completed') ? 'block' : 'none';
-                break;
-            case 'pending':
-                card.style.display = !card.classList.contains('kpi-completed') ? 'block' : 'none';
-                break;
-            default:
-                card.style.display = 'block';
-                break;
-        }
-    });
-}
-
-// KPI完了状態を切り替える関数
-function toggleKpiCompletion(activityId, kpiText, isCompleted) {
-    const activity = getActivityById(activityId);
-    if (!activity || !Array.isArray(activity.kpis)) return;
-    
-    // KPIを検索
-    const kpiIndex = activity.kpis.findIndex(kpi => 
-        typeof kpi === 'object' && kpi !== null && kpi.text === kpiText
-    );
-    
-    if (kpiIndex !== -1) {
-        // KPIの完了状態を更新
-        activity.kpis[kpiIndex].completed = isCompleted;
+    // KPIカードを作成する関数
+    function createKpiCard(kpi) {
+        const card = document.createElement('div');
+        card.className = `kpi-card ${kpi.completed ? 'kpi-completed' : ''}`;
+        card.dataset.id = kpi.id;
+        card.dataset.activityId = kpi.activityId;
         
-        // 進捗度を再計算
-        activity.progress = calculateProgressFromKPIs(activity);
+        // 残り日数を計算
+        const daysRemaining = calculateDaysRemaining(kpi.deadline);
+        let deadlineClass = '';
+        let deadlineText = '';
         
-        // 100%の場合は完了フラグも設定
-        if (activity.progress >= 100) {
-            activity.completed = true;
-            // 完了した事業のタスクを今日のタスクから削除
-            removeCompletedActivityTasks(activity.id);
+        if (kpi.completed) {
+            deadlineClass = 'deadline-completed';
+            deadlineText = '達成済み';
+        } else if (daysRemaining < 0) {
+            deadlineClass = 'deadline-expired';
+            deadlineText = `期限切れ (${Math.abs(daysRemaining)}日経過)`;
+        } else if (daysRemaining === 0) {
+            deadlineClass = 'deadline-today';
+            deadlineText = '本日期限';
+        } else if (daysRemaining <= 3) {
+            deadlineClass = 'deadline-urgent';
+            deadlineText = `残り ${daysRemaining} 日`;
+        } else if (daysRemaining <= 7) {
+            deadlineClass = 'deadline-warning';
+            deadlineText = `残り ${daysRemaining} 日`;
         } else {
-            activity.completed = false;
+            deadlineClass = 'deadline-normal';
+            deadlineText = `残り ${daysRemaining} 日`;
         }
         
-        // データを保存
-        saveData();
+        // 日付フォーマット
+        const deadlineDate = new Date(kpi.deadline);
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
+        
+        card.innerHTML = `
+            <div class="kpi-card-content">
+                <div class="kpi-checkbox-container">
+                    <input type="checkbox" class="kpi-checkbox" ${kpi.completed ? 'checked' : ''}>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-text ${kpi.completed ? 'completed-text' : ''}">${kpi.text}</div>
+                    <div class="kpi-activity">${kpi.activityName}</div>
+                </div>
+                <div class="kpi-deadline-container">
+                    <div class="kpi-deadline ${deadlineClass}">${deadlineText}</div>
+                    <div class="kpi-date">${formattedDate}</div>
+                </div>
+            </div>
+        `;
+        
+        // チェックボックスのイベントリスナーを設定
+        const checkbox = card.querySelector('.kpi-checkbox');
+        checkbox.addEventListener('change', () => {
+            toggleKpiCompletion(kpi.activityId, kpi.text, checkbox.checked);
+            card.classList.toggle('kpi-completed', checkbox.checked);
+            card.querySelector('.kpi-text').classList.toggle('completed-text', checkbox.checked);
+            
+            // 達成状況を更新
+            updateKpiCompletionStats();
+            
+            // もしこのKPIの完了によって事業が完了した場合（進捗度が100%になった場合）、
+            // このKPIカードを非表示にする
+            const activity = getActivityById(kpi.activityId);
+            if (activity && (activity.progress >= 100 || activity.completed)) {
+                card.remove();
+            }
+        });
+        
+        // カードクリックで詳細ページへ遷移（チェックボックス以外をクリックした場合）
+        card.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('kpi-checkbox')) {
+                state.currentActivity = kpi.activityId;
+                renderPage('activity-detail');
+            }
+        });
+        
+        return card;
     }
-}
 
-// 残り日数を計算する関数
-function calculateDaysRemaining(deadline) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const deadlineDate = new Date(deadline);
-    deadlineDate.setHours(0, 0, 0, 0);
-    
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-}
+    // KPI達成状況統計を更新する関数
+    function updateKpiCompletionStats() {
+        const kpiCards = document.querySelectorAll('.kpi-card');
+        const totalKpis = kpiCards.length;
+        const completedKpis = document.querySelectorAll('.kpi-card.kpi-completed').length;
+        const completionPercentage = totalKpis > 0 ? (completedKpis / totalKpis) * 100 : 0;
+        
+        // カウント更新
+        document.getElementById('total-kpi-count').textContent = totalKpis;
+        document.getElementById('kpi-completed-count').textContent = completedKpis;
+        
+        // 進捗バー更新
+        const progressBar = document.getElementById('kpi-completion-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${completionPercentage}%`;
+        }
+    }
 
-// ページレンダリング関数を修正して、KPI一覧ページをサポート
-// renderPage関数のcase文に追加
-/* 以下のコードをrenderPage関数のswitch文内に追加してください
-case 'kpi-list':
-    template = document.getElementById('kpi-list-template');
-    appContainer.appendChild(document.importNode(template.content, true));
-    renderKpiList();
-    break;
-*/
+    // KPIフィルタリング関数
+    function filterKpis(filter) {
+        const kpiCards = document.querySelectorAll('.kpi-card');
+        
+        kpiCards.forEach(card => {
+            switch (filter) {
+                case 'completed':
+                    card.style.display = card.classList.contains('kpi-completed') ? 'block' : 'none';
+                    break;
+                case 'pending':
+                    card.style.display = !card.classList.contains('kpi-completed') ? 'block' : 'none';
+                    break;
+                default:
+                    card.style.display = 'block';
+                    break;
+            }
+        });
+    }
 
-// CSSスタイルを追加するために、下記のコードを実行（DOMロード時に一度だけ）
-function addKpiListStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-            width: 100%;
-        }
+    // KPI完了状態を切り替える関数
+    function toggleKpiCompletion(activityId, kpiText, isCompleted) {
+        const activity = getActivityById(activityId);
+        if (!activity || !Array.isArray(activity.kpis)) return;
         
-        .kpi-card {
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: var(--card-radius);
-            padding: 1rem;
-            box-shadow: var(--shadow);
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            position: relative;
-        }
+        // KPIを検索
+        const kpiIndex = activity.kpis.findIndex(kpi => 
+            typeof kpi === 'object' && kpi !== null && kpi.text === kpiText
+        );
         
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        if (kpiIndex !== -1) {
+            // KPIの完了状態を更新
+            activity.kpis[kpiIndex].completed = isCompleted;
+            
+            // 進捗度を再計算
+            activity.progress = calculateProgressFromKPIs(activity);
+            
+            // 100%の場合は完了フラグも設定
+            if (activity.progress >= 100) {
+                activity.completed = true;
+                // 完了した事業のタスクを今日のタスクから削除
+                removeCompletedActivityTasks(activity.id);
+            } else {
+                activity.completed = false;
+            }
+            
+            // データを保存
+            saveData();
         }
+    }
+
+    // 残り日数を計算する関数
+    function calculateDaysRemaining(deadline) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
-        .kpi-card.kpi-completed {
-            background-color: #f8f9fa;
-            border-left: 4px solid var(--success-color);
-        }
+        const deadlineDate = new Date(deadline);
+        deadlineDate.setHours(0, 0, 0, 0);
         
-        .kpi-card-content {
-            display: flex;
-            align-items: flex-start;
-        }
+        const diffTime = deadlineDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        .kpi-checkbox-container {
-            margin-right: 0.8rem;
-        }
-        
-        .kpi-checkbox {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--accent-color);
-            cursor: pointer;
-        }
-        
-        .kpi-info {
-            flex: 1;
-        }
-        
-        .kpi-text {
-            font-size: 1rem;
-            font-weight: 500;
-            margin-bottom: 0.3rem;
-        }
-        
-        .completed-text {
-            text-decoration: line-through;
-            color: var(--text-secondary);
-        }
-        
-        .kpi-activity {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        
-        .kpi-deadline-container {
-            text-align: right;
-            min-width: 100px;
-            margin-left: 0.5rem;
-        }
-        
-        .kpi-deadline {
-            font-size: 0.85rem;
-            font-weight: 500;
-            padding: 0.2rem 0.6rem;
-            border-radius: 12px;
-            display: inline-block;
-            margin-bottom: 0.3rem;
-        }
-        
-        .kpi-date {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-        
-        .deadline-completed {
-            background-color: var(--success-color);
-            color: white;
-        }
-        
-        .deadline-expired {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        .deadline-today {
-            background-color: var(--danger-color);
-            color: white;
-        }
-        
-        .deadline-urgent {
-            background-color: var(--warning-color);
-            color: var(--text-color);
-        }
-        
-        .deadline-warning {
-            background-color: #f39c12;
-            color: white;
-        }
-        
-        .deadline-normal {
-            background-color: var(--accent-light);
-            color: var(--accent-color);
-        }
-    `;
-    document.head.appendChild(style);
+        return diffDays;
+    }
+
+    // KPI一覧ページ用のスタイルを追加する関数
+    function addKpiListStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .kpi-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1rem;
+                width: 100%;
+            }
+            
+            .kpi-card {
+                background-color: white;
+                border: 1px solid var(--border-color);
+                border-radius: var(--card-radius);
+                padding: 1rem;
+                box-shadow: var(--shadow);
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                position: relative;
+            }
+            
+            .kpi-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+            
+            .kpi-card.kpi-completed {
+                background-color: #f8f9fa;
+                border-left: 4px solid var(--success-color);
+            }
+            
+            .kpi-card-content {
+                display: flex;
+                align-items: flex-start;
+            }
+            
+            .kpi-checkbox-container {
+                margin-right: 0.8rem;
+            }
+            
+            .kpi-checkbox {
+                width: 20px;
+                height: 20px;
+                accent-color: var(--accent-color);
+                cursor: pointer;
+            }
+            
+            .kpi-info {
+                flex: 1;
+            }
+            
+            .kpi-text {
+                font-size: 1rem;
+                font-weight: 500;
+                margin-bottom: 0.3rem;
+            }
+            
+            .completed-text {
+                text-decoration: line-through;
+                color: var(--text-secondary);
+            }
+            
+            .kpi-activity {
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+            }
+            
+            .kpi-deadline-container {
+                text-align: right;
+                min-width: 100px;
+                margin-left: 0.5rem;
+            }
+            
+            .kpi-deadline {
+                font-size: 0.85rem;
+                font-weight: 500;
+                padding: 0.2rem 0.6rem;
+                border-radius: 12px;
+                display: inline-block;
+                margin-bottom: 0.3rem;
+            }
+            
+            .kpi-date {
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+            }
+            
+            .deadline-completed {
+                background-color: var(--success-color);
+                color: white;
+            }
+            
+            .deadline-expired {
+                background-color: var(--danger-color);
+                color: white;
+            }
+            
+            .deadline-today {
+                background-color: var(--danger-color);
+                color: white;
+            }
+            
+            .deadline-urgent {
+                background-color: var(--warning-color);
+                color: var(--text-color);
+            }
+            
+            .deadline-warning {
+                background-color: #f39c12;
+                color: white;
+            }
+            
+            .deadline-normal {
+                background-color: var(--accent-light);
+                color: var(--accent-color);
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     // 今日のタスク一覧ページをレンダリングする関数
@@ -2403,7 +2175,7 @@ function addKpiListStyles() {
                 const page = this.dataset.page;
                 
                 // ホームページでのセクションジャンプ処理
-                if (state.currentPage === 'home' && page !== 'daily-tasks' && page !== 'activity-form') {
+if (state.currentPage === 'home' && page !== 'daily-tasks' && page !== 'kpi-list' && page !== 'activity-form' && page !== 'dashboard') {
                     // ページ内のセクションにスクロール
                     const section = document.getElementById(page);
                     if (section) {
