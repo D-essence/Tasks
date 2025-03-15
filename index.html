@@ -643,36 +643,42 @@
                     </div>
                 </div>
                 
-                <div class="timeline-container">
-                    <div class="timeline-header">
-                        <div class="time-column">時間</div>
-                        <div class="schedule-column">スケジュール</div>
-                    </div>
-                    
-                    <div class="timeline-body" id="timeline-body">
-                        <!-- ここに時間枠がJSで動的に追加されます -->
-                    </div>
-                </div>
-                
-                <div class="timeline-items-container">
-                    <div class="timeline-items-section">
-                        <h3 class="section-title">KPI</h3>
-                        <div class="timeline-items-list" id="kpi-items-list">
-                            <!-- ここにKPIのリストがJSで動的に追加されます -->
+                <div class="timeline-layout">
+                    <!-- 左側のスケジュール -->
+                    <div class="timeline-left-column">
+                        <div class="timeline-container">
+                            <div class="timeline-header">
+                                <div class="time-column">時間</div>
+                                <div class="schedule-column">スケジュール</div>
+                            </div>
+                            
+                            <div class="timeline-body" id="timeline-body">
+                                <!-- ここに時間枠がJSで動的に追加されます -->
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="timeline-items-section">
-                        <h3 class="section-title">今日のタスク</h3>
-                        <div class="timeline-items-list" id="today-tasks-list">
-                            <!-- ここに今日のタスクのリストがJSで動的に追加されます -->
+                    <!-- 右側のKPIとタスク -->
+                    <div class="timeline-right-column">
+                        <div class="timeline-items-section">
+                            <h3 class="section-title">KPI</h3>
+                            <div class="timeline-items-list" id="kpi-items-list">
+                                <!-- ここにKPIのリストがJSで動的に追加されます -->
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="timeline-items-section">
-                        <h3 class="section-title">毎日のタスク</h3>
-                        <div class="timeline-items-list" id="daily-tasks-list-timeline">
-                            <!-- ここに毎日のタスクのリストがJSで動的に追加されます -->
+                        
+                        <div class="timeline-items-section">
+                            <h3 class="section-title">今日のタスク</h3>
+                            <div class="timeline-items-list" id="today-tasks-list">
+                                <!-- ここに今日のタスクのリストがJSで動的に追加されます -->
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-items-section">
+                            <h3 class="section-title">毎日のタスク</h3>
+                            <div class="timeline-items-list" id="daily-tasks-list-timeline">
+                                <!-- ここに毎日のタスクのリストがJSで動的に追加されます -->
+                            </div>
                         </div>
                     </div>
                 </div>
