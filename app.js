@@ -2236,6 +2236,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const style = document.createElement('style');
         style.textContent = `
             /* タイムラインページのスタイル */
+            .timeline-layout {
+                display: flex;
+                gap: 1.5rem;
+                width: 100%;
+            }
+            
+            .timeline-left-column {
+                width: 50%;
+                flex-shrink: 0;
+            }
+            
+            .timeline-right-column {
+                width: 50%;
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+            
             .timeline-control-bar {
                 display: flex;
                 justify-content: space-between;
@@ -2249,641 +2267,77 @@ document.addEventListener('DOMContentLoaded', function() {
                 border: none;
                 border-radius: var(--card-radius);
                 cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                transition: all 0.2s ease;
-            }
-            
-            .control-btn:hover {
-                background-color: var(--accent-color);
-                color: white;
-            }
+                display: flex
+            /* タイムラインページの新レイアウト */
+.timeline-layout {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+}
 
-            .trash-zone {
-                display: flex;
-                align-items: center;
-                padding: 0.5rem 1rem;
-                background-color: #fee;
-                color: var(--danger-color);
-                border: 2px dashed var(--danger-color);
-                border-radius: var(--card-radius);
-                cursor: pointer;
-                min-width: 200px;
-                justify-content: center;
-                gap: 0.5rem;
-                transition: all 0.2s ease;
-            }
-            
-            .trash-zone.drag-over {
-                background-color: var(--danger-color);
-                color: white;
-            }
-            
-            .timeline-container {
-                background-color: white;
-                border-radius: var(--card-radius);
-                box-shadow: var(--shadow);
-                margin-bottom: 2rem;
-                overflow: hidden;
-            }
-            
-            .timeline-header {
-                display: flex;
-                background-color: var(--primary-color);
-                color: white;
-                padding: 0.8rem;
-            }
-            
-            .time-column {
-                width: 80px;
-                font-weight: 600;
-                text-align: center;
-            }
-            
-            .schedule-column {
-                flex: 1;
-                font-weight: 600;
-                text-align: center;
-            }
-            
-            .timeline-body {
-                max-height: 600px;
-                overflow-y: auto;
-            }
-            
-            .time-slot {
-                display: flex;
-                border-bottom: 1px solid var(--border-color);
-                min-height: 60px;
-            }
-            
-            .time-slot:last-child {
-                border-bottom: none;
-            }
-            
-            .time-label {
-                width: 80px;
-                padding: 0.5rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background-color: var(--bg-color);
-                font-weight: 500;
-                border-right: 1px solid var(--border-color);
-                font-size: 0.9rem;
-            }
-            
-            .time-content {
-                flex: 1;
-                padding: 0.5rem;
-                min-height: 60px;
-                transition: background-color 0.2s ease;
-            }
-            
-            .time-content.drag-over {
-                background-color: var(--accent-light);
-            }
-            
-            .timeline-item {
-                background-color: var(--accent-light);
-                color: var(--accent-color);
-                padding: 0.5rem;
-                border-radius: 4px;
-                margin-bottom: 0.5rem;
-                cursor: grab;
-                font-size: 0.9rem;
-                border-left: 4px solid var(--accent-color);
-                transition: all 0.2s ease;
-                position: relative;
-            }
-            
-            .timeline-item:last-child {
-                margin-bottom: 0;
-            }
-            
-            .timeline-item:hover {
-                background-color: var(--accent-color);
-                color: white;
-            }
-            
-            .timeline-item.kpi-item {
-                background-color: #e8f5e9;
-                color: #2e7d32;
-                border-left-color: #2e7d32;
-            }
-            
-            .timeline-item.kpi-item:hover {
-                background-color: #2e7d32;
-                color: white;
-            }
-            
-            .timeline-item.task-item {
-                background-color: #fff3e0;
-                color: #e65100;
-                border-left-color: #e65100;
-            }
-            
-            .timeline-item.task-item:hover {
-                background-color: #e65100;
-                color: white;
-            }
-            
-            .timeline-item-content {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                padding-right: 20px;
-            }
-            
-            .timeline-item-source {
-                font-size: 0.7rem;
-                opacity: 0.8;
-                margin-top: 0.2rem;
-            }
-            
-            .timeline-items-container {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            }
-            
-            .timeline-items-section {
-                flex: 1;
-                min-width: 250px;
-                background-color: white;
-                border-radius: var(--card-radius);
-                box-shadow: var(--shadow);
-                padding: 1.5rem;
-            }
-            
-            .timeline-items-list {
-                margin-top: 1rem;
-                max-height: 300px;
-                overflow-y: auto;
-            }
-            
-            .draggable-item {
-                background-color: white;
-                padding: 0.8rem;
-                border-radius: 4px;
-                margin-bottom: 0.8rem;
-                cursor: grab;
-                border: 1px solid var(--border-color);
-                font-size: 0.9rem;
-                transition: all 0.2s ease;
-                position: relative;
-            }
-            
-            .draggable-item:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            
-            .draggable-item.kpi-draggable {
-                border-left: 4px solid #2e7d32;
-            }
-            
-            .draggable-item.task-draggable {
-                border-left: 4px solid #e65100;
-            }
-            
-            .draggable-item-content {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            
-            .draggable-item-source {
-                font-size: 0.75rem;
-                color: var(--text-secondary);
-                margin-top: 0.3rem;
-            }
-            
-            .dragging {
-                opacity: 0.5;
-            }
-        `;
-        document.head.appendChild(style);
-    }
+.timeline-left-column {
+    width: 50%;
+    flex-shrink: 0;
+}
 
-    // タイムラインページをレンダリングする関数
-    function renderTimeline() {
-        updateCurrentDate();
-        updateLastUpdated();
-        
-        // タイムラインの現在の日付を設定
-        const currentDateElement = document.getElementById('timeline-current-date');
-        if (currentDateElement) {
-            const today = new Date();
-            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-            currentDateElement.textContent = today.toLocaleDateString('ja-JP', options);
-        }
-        
-        // タイムラインデータの初期化
-        const today = getCurrentDate();
-        if (!state.timeline[today]) {
-            initializeTimelineData(today);
-        }
-        
-        // タイムスロットを生成
-        generateTimeSlots();
-        
-        // KPIアイテムをロード
-        loadKpiItems();
-        
-        // タスクアイテムをロード
-        loadTaskItems();
-        
-        // ドラッグ&ドロップイベントの設定
-        setupTimelineDragDrop();
-        
-        // コントロールボタンのイベント設定
-        document.getElementById('clear-timeline-btn').addEventListener('click', clearTimeline);
-        
-        // ゴミ箱エリアのイベント設定
-        setupTrashZone();
-        
-        // フッターの更新日時を更新
-        document.getElementById('timeline-footer-last-updated').textContent = 
-            document.getElementById('last-updated-date').textContent;
-    }
+.timeline-right-column {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
 
-    // タイムラインデータを初期化する関数
-    function initializeTimelineData(date) {
-        if (!state.timeline) {
-            state.timeline = {};
-        }
-        
-        state.timeline[date] = {};
-        
-        // 7:00から22:00まで30分おきに初期化
-        for (let hour = 7; hour <= 22; hour++) {
-            state.timeline[date][`${hour.toString().padStart(2, '0')}:00`] = [];
-            
-            if (hour < 22) {
-                state.timeline[date][`${hour.toString().padStart(2, '0')}:30`] = [];
-            }
-        }
-        
-        saveTimelineData();
-    }
+/* タイムスロットのスタイル改善 */
+.time-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
 
-    // タイムラインデータを保存する関数
-    function saveTimelineData() {
-        try {
-            localStorage.setItem('timeline', JSON.stringify(state.timeline));
-            updateLastUpdated();
-        } catch (error) {
-            console.error('タイムラインデータの保存中にエラーが発生しました:', error);
-        }
-    }
+.timeline-item {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 180px;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
 
-    // タイムスロットを生成する関数
-    function generateTimeSlots() {
-        const timelineBody = document.getElementById('timeline-body');
-        if (!timelineBody) return;
-        
-        timelineBody.innerHTML = '';
-        
-        const today = getCurrentDate();
-        const timelineData = state.timeline[today] || {};
-        
-        // 7:00から22:00まで30分おきにスロットを生成
-        for (let hour = 7; hour <= 22; hour++) {
-            // 00分のスロット
-            const timeSlot00 = createTimeSlot(
-                `${hour.toString().padStart(2, '0')}:00`, 
-                timelineData[`${hour.toString().padStart(2, '0')}:00`] || []
-            );
-            timelineBody.appendChild(timeSlot00);
-            
-            // 30分のスロット（22:30は不要）
-            if (hour < 22) {
-                const timeSlot30 = createTimeSlot(
-                    `${hour.toString().padStart(2, '0')}:30`, 
-                    timelineData[`${hour.toString().padStart(2, '0')}:30`] || []
-                );
-                timelineBody.appendChild(timeSlot30);
-            }
-        }
-    }
+/* ドラッガブルアイテムの改善 */
+.draggable-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
 
-    // 時間スロットを作成する関数
-    function createTimeSlot(time, items) {
-        const timeSlot = document.createElement('div');
-        timeSlot.className = 'time-slot';
-        
-        const timeLabel = document.createElement('div');
-        timeLabel.className = 'time-label';
-        timeLabel.textContent = time;
-        
-        const timeContent = document.createElement('div');
-        timeContent.className = 'time-content';
-        timeContent.dataset.time = time;
-        
-        // タイムスロットに登録されているアイテムを表示
-        items.forEach(item => {
-            const timelineItem = createTimelineItem(item);
-            timeContent.appendChild(timelineItem);
-        });
-        
-        timeSlot.appendChild(timeLabel);
-        timeSlot.appendChild(timeContent);
-        
-        return timeSlot;
-    }
+.draggable-item-content {
+    flex: 1;
+}
 
-    // タイムラインアイテムを作成する関数
-    function createTimelineItem(item) {
-        const timelineItem = document.createElement('div');
-        timelineItem.className = `timeline-item ${item.type}-item`;
-        timelineItem.dataset.id = item.id;
-        timelineItem.dataset.type = item.type;
-        timelineItem.dataset.sourceId = item.sourceId;
-        timelineItem.draggable = true;
-        
-        const itemContent = document.createElement('div');
-        itemContent.className = 'timeline-item-content';
-        itemContent.textContent = item.text;
-        
-        const itemSource = document.createElement('div');
-        itemSource.className = 'timeline-item-source';
-        itemSource.textContent = item.activityName || '';
-        
-        timelineItem.appendChild(itemContent);
-        timelineItem.appendChild(itemSource);
-        
-        // ドラッグイベントのセットアップ
-        timelineItem.addEventListener('dragstart', function(e) {
-            e.dataTransfer.setData('application/json', JSON.stringify(item));
-            this.classList.add('dragging');
-        });
-        
-        timelineItem.addEventListener('dragend', function() {
-            this.classList.remove('dragging');
-        });
-        
-        return timelineItem;
-    }
+.draggable-item-deadline {
+    font-size: 0.75rem;
+    color: white;
+    background-color: var(--warning-color);
+    padding: 0.2rem 0.4rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+}
 
-    // KPIアイテムをロードする関数
-    function loadKpiItems() {
-        const kpiList = document.getElementById('kpi-items-list');
-        if (!kpiList) return;
-        
-        kpiList.innerHTML = '';
-        
-        // 未完了のKPIを取得
-        const pendingKpis = [];
-        state.activities.forEach(activity => {
-            if (!activity.completed && Array.isArray(activity.kpis)) {
-                activity.kpis.forEach(kpi => {
-                    if (typeof kpi === 'object' && kpi !== null && !kpi.completed) {
-                        pendingKpis.push({
-                            id: generateId(),
-                            type: 'kpi',
-                            sourceId: activity.id + '-' + kpi.text,
-                            text: kpi.text,
-                            activityId: activity.id,
-                            activityName: activity.name
-                        });
-                    }
-                });
-            }
-        });
-        
-        // KPIアイテムを表示
-        if (pendingKpis.length === 0) {
-            kpiList.innerHTML = '<div class="empty-list-message">未達成のKPIはありません</div>';
-        } else {
-            pendingKpis.forEach(kpi => {
-                const kpiItem = createDraggableItem(kpi);
-                kpiList.appendChild(kpiItem);
-            });
-        }
-    }
+.draggable-item-right {
+    display: flex;
+    align-items: center;
+}
 
-    // タスクアイテムをロードする関数
-    function loadTaskItems() {
-        const todayTasksList = document.getElementById('today-tasks-list');
-        const dailyTasksList = document.getElementById('daily-tasks-list-timeline');
-        
-        if (!todayTasksList || !dailyTasksList) return;
-        
-        todayTasksList.innerHTML = '';
-        dailyTasksList.innerHTML = '';
-        
-        const today = getCurrentDate();
-        const todayTasks = state.dailyTasks[today] || [];
-        
-        // 今日だけのタスク（isRecurring=false）
-        const temporaryTasks = todayTasks.filter(task => !task.isRecurring).map(task => ({
-            id: generateId(),
-            type: 'task',
-            sourceId: task.id,
-            text: task.name,
-            activityId: task.activityId || '',
-            activityName: task.activityName || '今日のタスク'
-        }));
-        
-        // 毎日のタスク（isRecurring=true）
-        const recurringTasks = todayTasks.filter(task => task.isRecurring).map(task => ({
-            id: generateId(),
-            type: 'task',
-            sourceId: task.id,
-            text: task.name,
-            activityId: task.activityId || '',
-            activityName: task.activityName || ''
-        }));
-        
-        // 今日のタスクを表示
-        if (temporaryTasks.length === 0) {
-            todayTasksList.innerHTML = '<div class="empty-list-message">今日だけのタスクはありません</div>';
-        } else {
-            temporaryTasks.forEach(task => {
-                const taskItem = createDraggableItem(task);
-                todayTasksList.appendChild(taskItem);
-            });
-        }
-        
-        // 毎日のタスクを表示
-        if (recurringTasks.length === 0) {
-            dailyTasksList.innerHTML = '<div class="empty-list-message">毎日のタスクはありません</div>';
-        } else {
-            recurringTasks.forEach(task => {
-                const taskItem = createDraggableItem(task);
-                dailyTasksList.appendChild(taskItem);
-            });
-        }
+/* レスポンシブ対応 */
+@media (max-width: 992px) {
+    .timeline-layout {
+        flex-direction: column;
     }
-
-    // ドラッグ可能なアイテムを作成する関数
-    function createDraggableItem(item) {
-        const draggableItem = document.createElement('div');
-        draggableItem.className = `draggable-item ${item.type}-draggable`;
-        draggableItem.dataset.id = item.id;
-        draggableItem.dataset.type = item.type;
-        draggableItem.dataset.sourceId = item.sourceId;
-        draggableItem.draggable = true;
-        
-        const itemContent = document.createElement('div');
-        itemContent.className = 'draggable-item-content';
-        itemContent.textContent = item.text;
-        
-        const itemSource = document.createElement('div');
-        itemSource.className = 'draggable-item-source';
-        itemSource.textContent = item.activityName || '';
-        
-        draggableItem.appendChild(itemContent);
-        draggableItem.appendChild(itemSource);
-        
-        // ドラッグイベントのセットアップ
-        draggableItem.addEventListener('dragstart', function(e) {
-            e.dataTransfer.setData('application/json', JSON.stringify(item));
-            this.classList.add('dragging');
-        });
-        
-        draggableItem.addEventListener('dragend', function() {
-            this.classList.remove('dragging');
-        });
-        
-        return draggableItem;
+    
+    .timeline-left-column,
+    .timeline-right-column {
+        width: 100%;
     }
-
-    // タイムラインのドラッグ&ドロップイベントを設定する関数
-    function setupTimelineDragDrop() {
-        const timeSlotContents = document.querySelectorAll('.time-content');
-        
-        timeSlotContents.forEach(slot => {
-            // dragoverイベント
-            slot.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                this.classList.add('drag-over');
-            });
-            
-            // dragleaveイベント
-            slot.addEventListener('dragleave', function() {
-                this.classList.remove('drag-over');
-            });
-            
-            // dropイベント
-            slot.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-                
-                try {
-                    const itemData = JSON.parse(e.dataTransfer.getData('application/json'));
-                    const time = this.dataset.time;
-                    const today = getCurrentDate();
-                    
-                    // タイムラインにアイテムを追加
-                    if (!state.timeline[today][time]) {
-                        state.timeline[today][time] = [];
-                    }
-                    
-                    // 同じアイテムが既に存在するか確認
-                    const existingItem = state.timeline[today][time].find(item => 
-                        item.id === itemData.id
-                    );
-                    
-                    if (!existingItem) {
-                        state.timeline[today][time].push(itemData);
-                        saveTimelineData();
-                        
-                        // タイムスロットにアイテムを追加
-                        const timelineItem = createTimelineItem(itemData);
-                        this.appendChild(timelineItem);
-                    }
-                } catch (error) {
-                    console.error('ドロップ処理中にエラーが発生しました:', error);
-                }
-            });
-        });
-    }
-
-    // ゴミ箱エリアのイベントを設定する関数
-    function setupTrashZone() {
-        const trashZone = document.getElementById('timeline-trash');
-        
-        // dragoverイベント
-        trashZone.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.classList.add('drag-over');
-        });
-        
-        // dragleaveイベント
-        trashZone.addEventListener('dragleave', function() {
-            this.classList.remove('drag-over');
-        });
-        
-        // dropイベント
-        trashZone.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-            
-            try {
-                const itemData = JSON.parse(e.dataTransfer.getData('application/json'));
-                const today = getCurrentDate();
-                
-                // タイムライン内のアイテムを削除
-                for (const time in state.timeline[today]) {
-                    state.timeline[today][time] = state.timeline[today][time].filter(item => 
-                        item.id !== itemData.id
-                    );
-                }
-                
-                saveTimelineData();
-                
-                // タイムラインを再レンダリング
-                generateTimeSlots();
-                
-                // ドラッグ&ドロップイベントを再設定
-                setupTimelineDragDrop();
-            } catch (error) {
-                console.error('ゴミ箱ドロップ処理中にエラーが発生しました:', error);
-            }
-        });
-    }
-
-    // タイムラインをクリアする関数
-    function clearTimeline() {
-        if (confirm('タイムラインをクリアしますか？')) {
-            const today = getCurrentDate();
-            
-            // 各時間スロットを空の配列で初期化
-            for (const time in state.timeline[today]) {
-                state.timeline[today][time] = [];
-            }
-            
-            saveTimelineData();
-            
-            // タイムラインを再レンダリング
-            generateTimeSlots();
-            
-            // ドラッグ&ドロップイベントを再設定
-            setupTimelineDragDrop();
-        }
-    }
-
-    // 現在のタイムラインが古いかどうかをチェックする関数
-    function checkTimelineReset() {
-        const today = getCurrentDate();
-        const lastUsedDate = localStorage.getItem('lastTimelineDate');
-        
-        // 日付が変わっていたらタイムラインをリセット
-        if (lastUsedDate && lastUsedDate !== today) {
-            // 前日のタイムラインを削除
-            if (state.timeline && state.timeline[lastUsedDate]) {
-                delete state.timeline[lastUsedDate];
-            }
-            
-            // 今日のタイムラインを初期化
-            initializeTimelineData(today);
-        }
-        
-        // 今日の日付を保存
-        localStorage.setItem('lastTimelineDate', today);
-    }
-});
+}
