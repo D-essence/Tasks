@@ -28,6 +28,7 @@
                     <li><a href="#" data-page="home" class="nav-link active">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
+                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
                     <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
                 </ul>
             </nav>
@@ -302,6 +303,7 @@
                     <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link active">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
+                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
                     <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
                 </ul>
             </nav>
@@ -351,6 +353,7 @@
                     <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link active">KPI一覧</a></li>
+                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
                     <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
                 </ul>
             </nav>
@@ -489,6 +492,7 @@
                     <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
+                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
                     <li><a href="#" data-page="dashboard" class="nav-link active">ダッシュボード</a></li>
                 </ul>
             </nav>
@@ -600,6 +604,83 @@
             <footer class="document-footer">
                 <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
                 <div class="footer-updated">最終更新：<span id="dashboard-last-updated"></span></div>
+            </footer>
+        </div>
+    </template>
+
+    <!-- テンプレート: タイムラインページ -->
+    <template id="timeline-template">
+        <div class="document">
+            <header class="document-header">
+                <h1 class="document-title">タイムライン</h1>
+                <p class="document-subtitle">今日の予定表</p>
+                <div class="document-date">日付: <span id="timeline-current-date"></span></div>
+            </header>
+            
+            <nav class="document-nav">
+                <h2 class="nav-title">目次</h2>
+                <ul class="nav-links">
+                    <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
+                    <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
+                    <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
+                    <li><a href="#" data-page="timeline" class="nav-link active">タイムライン</a></li>
+                    <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
+                </ul>
+            </nav>
+            
+            <main class="document-body">
+                <div class="timeline-control-bar">
+                    <div class="timeline-control-left">
+                        <button id="clear-timeline-btn" class="control-btn">
+                            <i class="fas fa-sync-alt"></i> タイムラインをクリア
+                        </button>
+                    </div>
+                    <div class="timeline-control-right">
+                        <div class="trash-zone" id="timeline-trash">
+                            <i class="fas fa-trash-alt"></i>
+                            <span>ここにドラッグで削除</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timeline-container">
+                    <div class="timeline-header">
+                        <div class="time-column">時間</div>
+                        <div class="schedule-column">スケジュール</div>
+                    </div>
+                    
+                    <div class="timeline-body" id="timeline-body">
+                        <!-- ここに時間枠がJSで動的に追加されます -->
+                    </div>
+                </div>
+                
+                <div class="timeline-items-container">
+                    <div class="timeline-items-section">
+                        <h3 class="section-title">KPI</h3>
+                        <div class="timeline-items-list" id="kpi-items-list">
+                            <!-- ここにKPIのリストがJSで動的に追加されます -->
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-items-section">
+                        <h3 class="section-title">今日のタスク</h3>
+                        <div class="timeline-items-list" id="today-tasks-list">
+                            <!-- ここに今日のタスクのリストがJSで動的に追加されます -->
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-items-section">
+                        <h3 class="section-title">毎日のタスク</h3>
+                        <div class="timeline-items-list" id="daily-tasks-list-timeline">
+                            <!-- ここに毎日のタスクのリストがJSで動的に追加されます -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <footer class="document-footer">
+                <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
+                <div class="footer-updated">最終更新：<span id="timeline-footer-last-updated"></span></div>
             </footer>
         </div>
     </template>
