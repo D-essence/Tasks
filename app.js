@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // アプリケーションの状態
     const state = {
         currentPage: 'home',
@@ -10,12 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
         timeline: {} // 追加：タイムラインのデータ
     };
 
-    // 初期データのロード
-    loadData();
-    
+    // 初期データのロード（Firestoreから）
+    await loadDataFromFirestore();
+
     // タイムラインのリセットをチェック
     checkTimelineReset();
-    
+
     // アプリの初期化
     initApp();
 
@@ -25,14 +25,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // =====================
     // データ管理機能
     // =====================
-    
+
+    // Firestoreからデータをロード
+    async function loadDataFromFirestore() {
+        try {
+            const data = await loadData("myUser"); // ← index.htmlで定義済みの関数を呼ぶ
+            state.activities = data.activities || [];
+            state.dailyTasks = data.dailyTasks || {};
+            state.timeline   = data.timeline   || {};
+
+            // isRecurringフラグがない古いタスクに対してフラグを追加
+            const today = getCurrentDate();
+            if (state.dailyTasks[today]) {
+                state.dailyTasks[today].forEach(task => {
+                    if (task.isRecurring === undefined) {
+                        task.isRecurring = true;
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('データのロード中にエラーが発生しました:', error);
+            const initialData = initializeData();
+            state.activities = initialData.activities;
+            state.dailyTasks = initialData.dailyTasks;
+            state.timeline   = {};
+        }
+    }
+
+    // Firestoreにデータを保存
+    async function saveDataToFirestore() {
+        try {
+            await saveData("myUser", {
+                activities: state.activities,
+                dailyTasks: state.dailyTasks,
+                timeline: state.timeline
+            });
+            updateLastUpdated();
+        } catch (error) {
+            console.error('データの保存中にエラーが発生しました:', error);
+            alert('データの保存に失敗しました。');
+        }
+    }
+
     // 未来の日付を取得する関数（n日後）
     function getFutureDateString(days) {
         const date = new Date();
         date.setDate(date.getDate() + days);
         return date.toISOString().split('T')[0];
     }
-    
+
     // データを初期化する関数
     function initializeData() {
         // 初期データは空で返す
@@ -40,65 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
             activities: [],
             dailyTasks: {}
         };
-    }
-
-    // データをロードする関数
-    function loadData() {
-        try {
-            // ローカルストレージからデータをロード
-            const savedActivities = localStorage.getItem('activities');
-            const savedDailyTasks = localStorage.getItem('dailyTasks');
-            const savedTimeline = localStorage.getItem('timeline'); // 追加：タイムラインデータ
-            
-            if (savedActivities && savedDailyTasks) {
-                state.activities = JSON.parse(savedActivities);
-                state.dailyTasks = JSON.parse(savedDailyTasks);
-                
-                // タイムラインデータがあれば読み込む
-                if (savedTimeline) {
-                    state.timeline = JSON.parse(savedTimeline);
-                } else {
-                    state.timeline = {};
-                }
-                
-                // isRecurringフラグがない古いタスクに対してフラグを追加
-                const today = getCurrentDate();
-                if (state.dailyTasks[today]) {
-                    state.dailyTasks[today].forEach(task => {
-                        if (task.isRecurring === undefined) {
-                            task.isRecurring = true;
-                        }
-                    });
-                }
-            } else {
-                // 初期データの作成と保存
-                const initialData = initializeData();
-                state.activities = initialData.activities;
-                state.dailyTasks = initialData.dailyTasks;
-                state.timeline = {}; // 追加：空のタイムライン
-                saveData();
-            }
-        } catch (error) {
-            console.error('データのロード中にエラーが発生しました:', error);
-            // エラーが発生した場合は初期データをロード
-            const initialData = initializeData();
-            state.activities = initialData.activities;
-            state.dailyTasks = initialData.dailyTasks;
-            state.timeline = {}; // 追加：空のタイムライン
-        }
-    }
-
-    // データを保存する関数
-    function saveData() {
-        try {
-            localStorage.setItem('activities', JSON.stringify(state.activities));
-            localStorage.setItem('dailyTasks', JSON.stringify(state.dailyTasks));
-            // 更新日時を更新
-            updateLastUpdated();
-        } catch (error) {
-            console.error('データの保存中にエラーが発生しました:', error);
-            alert('データの保存に失敗しました。');
-        }
     }
 
     // 一意のIDを生成する関数
@@ -121,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const today = new Date();
         const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
         const formattedDate = today.toLocaleDateString('ja-JP', options);
-        
+
         // 今日のタスクページの日付を更新
         const currentDateElement = document.getElementById('current-date');
         if (currentDateElement) {
@@ -132,17 +114,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // 最終更新日時を更新
     function updateLastUpdated() {
         const now = new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
         const formattedDate = now.toLocaleDateString('ja-JP', options);
-        
+
         // 各ページの更新日時を更新
-        const lastUpdatedElements = document.querySelectorAll('#last-updated-date, #footer-last-updated, #detail-last-updated, #detail-footer-last-updated, #tasks-footer-last-updated, #kpi-footer-last-updated, #timeline-footer-last-updated');
+        const lastUpdatedElements = document.querySelectorAll(
+            '#last-updated-date, #footer-last-updated, #detail-last-updated, #detail-footer-last-updated, #tasks-footer-last-updated, #kpi-footer-last-updated, #timeline-footer-last-updated'
+        );
         lastUpdatedElements.forEach(element => {
             if (element) {
                 element.textContent = formattedDate;
             }
         });
     }
+
+    // =====================
+    // 既存コードの「保存」呼び出し部分を全部
+    // saveDataToFirestore() に書き換えてください
+    // =====================
+});
 
     // =====================
     // UIレンダリング機能
