@@ -781,6 +781,30 @@
         </div>
     </template>
 
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
+    authDomain: "pinomaro-managing.firebaseapp.com",
+    projectId: "pinomaro-managing",
+    storageBucket: "pinomaro-managing.firebasestorage.app",
+    messagingSenderId: "619245174856",
+    appId: "1:619245174856:web:625820f7a35f7a80b0d87d",
+    measurementId: "G-8LN2271RCQ"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
     <script src="app.js"></script>
 </body>
 </html>
