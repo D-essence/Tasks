@@ -803,6 +803,19 @@
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
+
+    window.saveData = async function(userId, state) {
+    await setDoc(doc(db, "users", userId), state);
+  }
+
+  window.loadData = async function(userId) {
+    const docSnap = await getDoc(doc(db, "users", userId));
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      return { activities: [], dailyTasks: {}, timeline: {} };
+    }
+  }
 </script>
 
     <button onclick="testSave()">Firestoreに保存</button>
