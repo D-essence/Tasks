@@ -7,11 +7,35 @@ document.addEventListener('DOMContentLoaded', async function() {
         dailyTasks: {},
         editMode: false,
         editingItem: null,
-        timeline: {} // 追加：タイムラインのデータ
+        timeline: {}, // 追加：タイムラインのデータ
+        _meta: null
     };
 
     // 初期データのロード（Firestoreから）
     await loadDataFromFirestore();
+    // Firestore リアルタイム購読で他端末の変更を反映
+    let lastMeta = null;
+    const unsubscribe = (window.subscribeData ? window.subscribeData("myUser", (data) => {
+        const remoteMeta = (data && data._meta) || null;
+        const localMeta  = lastMeta || (state._meta || null);
+
+        // 自分が直前に保存した変更はスキップ（デバイスIDで判定）
+        if (remoteMeta && remoteMeta.deviceId && localStorage.getItem("be-trillion-device-id") === remoteMeta.deviceId) {
+            lastMeta = remoteMeta;
+            return;
+        }
+        const isNewer = !localMeta || (remoteMeta && remoteMeta.updatedAt > localMeta.updatedAt);
+        if (isNewer) {
+            state.activities = data.activities || [];
+            state.dailyTasks = data.dailyTasks || {};
+            state.timeline   = data.timeline   || {};
+            state._meta      = remoteMeta || null;
+            if (typeof renderPage === "function") {
+                renderPage(state.currentPage || "home");
+            }
+        }
+    }) : null);
+
 
     // タイムラインのリセットをチェック
     checkTimelineReset();
@@ -55,11 +79,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Firestoreにデータを保存
     async function saveDataToFirestore() {
         try {
-            await saveData("myUser", {
+            const meta = await saveData("myUser", {
                 activities: state.activities,
                 dailyTasks: state.dailyTasks,
                 timeline: state.timeline
             });
+            state._meta = meta;
             updateLastUpdated();
         } catch (error) {
             console.error('データの保存中にエラーが発生しました:', error);
