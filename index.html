@@ -783,63 +783,67 @@
 
     <!-- Firebase 初期化と Firestore の設定 -->
     <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-      import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-      // Firebase 設定
-      const firebaseConfig = {
-        apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
-        authDomain: "pinomaro-managing.firebaseapp.com",
-        projectId: "pinomaro-managing",
-        storageBucket: "pinomaro-managing.firebasestorage.app",
-        messagingSenderId: "619245174856",
-        appId: "1:619245174856:web:625820f7a35f7a80b0d87d",
-        measurementId: "G-8LN2271RCQ"
-      };
+  // Firebase 設定
+  const firebaseConfig = {
+    apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
+    authDomain: "pinomaro-managing.firebaseapp.com",
+    projectId: "pinomaro-managing",
+    storageBucket: "pinomaro-managing.firebasestorage.app",
+    messagingSenderId: "619245174856",
+    appId: "1:619245174856:web:625820f7a35f7a80b0d87d",
+    measurementId: "G-8LN2271RCQ"
+  };
 
-      // Firebase 初期化
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+  // Firebase 初期化
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      // グローバル公開（他のscriptやHTMLから呼べるようにする）
-      window.saveData = async function(userId, state) {
-        await setDoc(doc(db, "users", userId), state);
-      };
+  // 端末識別用（自分の更新を識別するため）
+  const DEVICE_ID_KEY = "be-trillion-device-id";
+  if (!localStorage.getItem(DEVICE_ID_KEY)) {
+    const uuid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2));
+    localStorage.setItem(DEVICE_ID_KEY, uuid);
+  }
+  const DEVICE_ID = localStorage.getItem(DEVICE_ID_KEY);
 
-      window.loadData = async function(userId) {
-        const docSnap = await getDoc(doc(db, "users", userId));
-        if (docSnap.exists()) {
-          return docSnap.data();
-        } else {
-          return { activities: [], dailyTasks: {}, timeline: {} };
-        }
-      };
-    </script>
-
-    <!-- 動作確認用のボタン -->
-    <button onclick="testSave()">Firestoreに保存</button>
-    <button onclick="testLoad()">Firestoreから読み込み</button>
-
-    <!-- 動作確認用の関数 -->
-    <script>
-      async function testSave() {
-        const state = {
-          activities: [{ id: 1, name: "テスト活動" }],
-          dailyTasks: { "2025-09-06": [{ id: 1, title: "テストタスク" }] },
-          timeline: { "2025-09-06": ["開始"] }
-        };
-        await saveData("myUser", state);
-        alert("保存しました！");
+  // グローバル公開（他のscriptやHTMLから呼べるようにする）
+  window.saveData = async function(userId, state) {
+    const payload = {
+      ...state,
+      _meta: {
+        updatedAt: Date.now(),
+        deviceId: DEVICE_ID
       }
+    };
+    await setDoc(doc(db, "users", userId), payload);
+    return payload._meta;
+  };
 
-      async function testLoad() {
-        const data = await loadData("myUser");
-        console.log("読み込んだデータ:", data);
-        alert("コンソールにデータを表示しました");
+  window.loadData = async function(userId) {
+    const snap = await getDoc(doc(db, "users", userId));
+    if (snap.exists()) {
+      return snap.data();
+    } else {
+      return { activities: [], dailyTasks: {}, timeline: {} };
+    }
+  };
+
+  // リアルタイム購読
+  window.subscribeData = function(userId, cb) {
+    const ref = doc(db, "users", userId);
+    return onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        cb(snap.data());
       }
-    </script>
-
+    }, (err) => {
+      console.error("Firestore onSnapshot error:", err);
+    });
+  };
+</script>
     <!-- あなたのアプリ本体 -->
-    <script src="app.js"></script>
+<script src="app.js"></script>
   </body>
 </html>
