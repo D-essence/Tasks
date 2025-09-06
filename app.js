@@ -138,7 +138,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 既存コードの「保存」呼び出し部分を全部
     // saveDataToFirestore() に書き換えてください
     // =====================
-});
 
     // =====================
     // UIレンダリング機能
