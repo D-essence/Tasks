@@ -783,67 +783,88 @@
 
     <!-- Firebase 初期化と Firestore の設定 -->
     <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+      import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-  // Firebase 設定
-  const firebaseConfig = {
-    apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
-    authDomain: "pinomaro-managing.firebaseapp.com",
-    projectId: "pinomaro-managing",
-    storageBucket: "pinomaro-managing.firebasestorage.app",
-    messagingSenderId: "619245174856",
-    appId: "1:619245174856:web:625820f7a35f7a80b0d87d",
-    measurementId: "G-8LN2271RCQ"
-  };
+      const firebaseConfig = {
+        apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
+        authDomain: "pinomaro-managing.firebaseapp.com",
+        projectId: "pinomaro-managing",
+        storageBucket: "pinomaro-managing.firebasestorage.app",
+        messagingSenderId: "619245174856",
+        appId: "1:619245174856:web:625820f7a35f7a80b0d87d",
+        measurementId: "G-8LN2271RCQ"
+      };
 
-  // Firebase 初期化
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
 
-  // 端末識別用（自分の更新を識別するため）
-  const DEVICE_ID_KEY = "be-trillion-device-id";
-  if (!localStorage.getItem(DEVICE_ID_KEY)) {
-    const uuid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2));
-    localStorage.setItem(DEVICE_ID_KEY, uuid);
-  }
-  const DEVICE_ID = localStorage.getItem(DEVICE_ID_KEY);
-
-  // グローバル公開（他のscriptやHTMLから呼べるようにする）
-  window.saveData = async function(userId, state) {
-    const payload = {
-      ...state,
-      _meta: {
-        updatedAt: Date.now(),
-        deviceId: DEVICE_ID
+      // 端末ID（自己エコーバック防止）
+      const DEVICE_ID_KEY = "be-trillion-device-id";
+      if (!localStorage.getItem(DEVICE_ID_KEY)) {
+        const uuid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2));
+        localStorage.setItem(DEVICE_ID_KEY, uuid);
       }
-    };
-    await setDoc(doc(db, "users", userId), payload);
-    return payload._meta;
-  };
+      const DEVICE_ID = localStorage.getItem(DEVICE_ID_KEY);
 
-  window.loadData = async function(userId) {
-    const snap = await getDoc(doc(db, "users", userId));
-    if (snap.exists()) {
-      return snap.data();
-    } else {
-      return { activities: [], dailyTasks: {}, timeline: {} };
-    }
-  };
-
-  // リアルタイム購読
-  window.subscribeData = function(userId, cb) {
-    const ref = doc(db, "users", userId);
-    return onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        cb(snap.data());
+      function ensureUserId(uid) {
+        if (!uid || typeof uid !== "string") throw new Error("Invalid userId");
+        return uid;
       }
-    }, (err) => {
-      console.error("Firestore onSnapshot error:", err);
-    });
-  };
-</script>
+
+      // 全体保存
+      window.saveData = async function(userId, state) {
+        const uid = ensureUserId(userId);
+        const payload = {
+          ...state,
+          _meta: { updatedAt: Date.now(), deviceId: DEVICE_ID }
+        };
+        await setDoc(doc(db, "users", uid), payload);
+        return payload._meta;
+      };
+
+      // 一回読み込み
+      window.loadData = async function(userId) {
+        const uid = ensureUserId(userId);
+        const snap = await getDoc(doc(db, "users", uid));
+        if (snap.exists()) return snap.data();
+        return { activities: [], dailyTasks: {}, timeline: {} };
+      };
+
+      // リアルタイム購読
+      window.subscribeData = function(userId, cb) {
+        const uid = ensureUserId(userId);
+        const ref = doc(db, "users", uid);
+        return onSnapshot(ref, (snap) => {
+          if (snap.exists()) cb(snap.data());
+        }, (err) => console.error("onSnapshot error:", err));
+      };
+    </script>
+
+    <!-- 動作確認用のボタン -->
+    <button onclick="testSave()">Firestoreに保存</button>
+    <button onclick="testLoad()">Firestoreから読み込み</button>
+
+    <!-- 動作確認用の関数 -->
+    <script>
+      async function testSave() {
+        const state = {
+          activities: [{ id: 1, name: "テスト活動" }],
+          dailyTasks: { "2025-09-06": [{ id: 1, title: "テストタスク" }] },
+          timeline: { "2025-09-06": ["開始"] }
+        };
+        await saveData("myUser", state);
+        alert("保存しました！");
+      }
+
+      async function testLoad() {
+        const data = await loadData("myUser");
+        console.log("読み込んだデータ:", data);
+        alert("コンソールにデータを表示しました");
+      }
+    </script>
+
     <!-- あなたのアプリ本体 -->
-<script src="app.js"></script>
+    <script src="app-3.js"></script>
   </body>
 </html>
