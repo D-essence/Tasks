@@ -7,34 +7,52 @@ document.addEventListener('DOMContentLoaded', async function() {
         dailyTasks: {},
         editMode: false,
         editingItem: null,
-        timeline: {}, // 追加：タイムラインのデータ
-        _meta: null
+        timeline: {} // 追加：タイムラインのデータ
     };
 
     // 初期データのロード（Firestoreから）
     await loadDataFromFirestore();
-    // Firestore リアルタイム購読で他端末の変更を反映
-    let lastMeta = null;
-    const unsubscribe = (window.subscribeData ? window.subscribeData("myUser", (data) => {
-        const remoteMeta = (data && data._meta) || null;
-        const localMeta  = lastMeta || (state._meta || null);
+    // Firestore リアルタイム購読（他端末の変更を反映）
+    try {
+        if (typeof subscribeData === "function") {
+            // 端末識別ID（index側で発行）
+            const DEVICE_ID_KEY = "be-trillion-device-id";
+            const __deviceId = localStorage.getItem(DEVICE_ID_KEY) || "";
+            let __localMeta = null;
+            if (state && state._meta) __localMeta = state._meta;
 
-        // 自分が直前に保存した変更はスキップ（デバイスIDで判定）
-        if (remoteMeta && remoteMeta.deviceId && localStorage.getItem("be-trillion-device-id") === remoteMeta.deviceId) {
-            lastMeta = remoteMeta;
-            return;
+            window.__unsubscribeFirestore && window.__unsubscribeFirestore();
+            window.__unsubscribeFirestore = subscribeData("myUser", (data) => {
+                if (!data) return;
+                const remoteMeta = (data && data._meta) || null;
+
+                // 自分の直近保存は無視
+                if (remoteMeta && remoteMeta.deviceId && remoteMeta.deviceId === __deviceId) {
+                    state._meta = remoteMeta;
+                    return;
+                }
+
+                const isNewer = !__localMeta || (remoteMeta && remoteMeta.updatedAt > __localMeta.updatedAt);
+                if (!isNewer) return;
+
+                state.activities = data.activities || [];
+                state.dailyTasks = data.dailyTasks || {};
+                state.timeline   = data.timeline   || {};
+                state._meta      = remoteMeta || null;
+                __localMeta      = state._meta;
+
+                if (typeof renderHomePage === 'function') {
+                    // 既存の描画関数が多数あるはずなので、ホームに戻すか、現在ページを再描画
+                    renderHomePage();
+                } else if (typeof renderPage === "function") {
+                    renderPage(state.currentPage || "home");
+                }
+                if (typeof updateLastUpdated === "function") updateLastUpdated();
+            });
         }
-        const isNewer = !localMeta || (remoteMeta && remoteMeta.updatedAt > localMeta.updatedAt);
-        if (isNewer) {
-            state.activities = data.activities || [];
-            state.dailyTasks = data.dailyTasks || {};
-            state.timeline   = data.timeline   || {};
-            state._meta      = remoteMeta || null;
-            if (typeof renderPage === "function") {
-                renderPage(state.currentPage || "home");
-            }
-        }
-    }) : null);
+    } catch (e) {
+        console.error("subscribeData error:", e);
+    }
 
 
     // タイムラインのリセットをチェック
@@ -77,14 +95,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Firestoreにデータを保存
-    async function saveDataToFirestore() {
+    async async function saveDataToFirestore() {
         try {
-            const meta = await saveData("myUser", {
-                activities: state.activities,
-                dailyTasks: state.dailyTasks,
-                timeline: state.timeline
-            });
-            state._meta = meta;
+            const __meta = await saveData("myUser", { activities: state.activities, dailyTasks: state.dailyTasks, timeline: state.timeline });
+            state._meta = __meta || null;
             updateLastUpdated();
         } catch (error) {
             console.error('データの保存中にエラーが発生しました:', error);
