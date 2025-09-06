@@ -88,15 +88,16 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    // 🔐 あなたの Firebase 設定をここに貼り付けてください（既存プロジェクトのもの）
-    // const firebaseConfig = { ... };
-    // 既に index-3.html に設定があるなら、そのまま流用して OK
-
-    // ------------------------------------------------------------------
-    // 既存の index-3.html を流用する場合は、上の firebaseConfig を削除し、
-    // 下記の行をコメントアウトして、window.appFirebase を参照してもOKです。
-    // ここでは単体で動くよう、ダミーで window.firebaseConfig を参照します。
-    // ------------------------------------------------------------------
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
+  authDomain: "pinomaro-managing.firebaseapp.com",
+  projectId: "pinomaro-managing",
+  storageBucket: "pinomaro-managing.firebasestorage.app",
+  messagingSenderId: "619245174856",
+  appId: "1:619245174856:web:625820f7a35f7a80b0d87d",
+  measurementId: "G-8LN2271RCQ"
+};
     const cfg = window.firebaseConfig || undefined;
     if (!cfg) {
       console.warn("⚠️ firebaseConfig が未設定です。設定を貼り付けてください。");
