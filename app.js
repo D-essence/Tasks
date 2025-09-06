@@ -2574,9 +2574,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // タイムラインデータを保存する関数
-    function saveTimelineData() {
+    async function saveTimelineData() {
         try {
-            localStorage.setItem('timeline', JSON.stringify(state.timeline));
+            await saveDataToFirestore();
             updateLastUpdated();
         } catch (error) {
             console.error('タイムラインデータの保存中にエラーが発生しました:', error);
@@ -3025,20 +3025,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 現在のタイムラインが古いかどうかをチェックする関数
     function checkTimelineReset() {
         const today = getCurrentDate();
-        const lastUsedDate = localStorage.getItem('lastTimelineDate');
-        
-        // 日付が変わっていたらタイムラインをリセット
-        if (lastUsedDate && lastUsedDate !== today) {
-            // 前日のタイムラインを削除
-            if (state.timeline && state.timeline[lastUsedDate]) {
-                delete state.timeline[lastUsedDate];
-            }
-            
-            // 今日のタイムラインを初期化
+        // 今日のタイムラインが未作成なら初期化（前日の残骸は自動的に上書きしない）
+        if (!state.timeline || !state.timeline[today]) {
             initializeTimelineData(today);
         }
-        
-        // 今日の日付を保存
-        localStorage.setItem('lastTimelineDate', today);
+        // 古い日付をクリーンアップ（任意: 直近3日だけ保持）
+        const keepDays = 3;
+        const dates = Object.keys(state.timeline || {});
+        dates.sort();
+        if (dates.length > keepDays) {
+            const toDelete = dates.slice(0, dates.length - keepDays);
+            toDelete.forEach(d => { delete state.timeline[d]; });
+        }
     }
 });
