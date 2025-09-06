@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tasks — Be Trillion</title>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Be Trillion — Tasks</h1>
+    <nav class="tabs">
+      <button class="tab-btn" data-tab="home">ホーム</button>
+      <button class="tab-btn" data-tab="today">今日のタスク</button>
+      <button class="tab-btn" data-tab="kpi">KPI一覧</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ホーム -->
+    <section id="tab-home" class="tab-section">
+      <div class="card">
+        <h2>概要</h2>
+        <div class="row">
+          <div>
+            <div class="metric">
+              <div class="metric-label">今日のタスク</div>
+              <div class="metric-value" id="home-today-count">0</div>
+            </div>
+          </div>
+          <div>
+            <div class="metric">
+              <div class="metric-label">未完了KPI</div>
+              <div class="metric-value" id="home-kpi-open">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="go-today" class="primary">今日のタスクを見る</button>
+          <button id="go-kpi" class="ghost">KPI一覧を見る</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 今日のタスク -->
+    <section id="tab-today" class="tab-section hidden">
+      <div class="card">
+        <h2>今日のタスク</h2>
+        <div class="task-input">
+          <input type="text" id="new-task-input" placeholder="新しいタスク..." />
+          <button id="add-task-btn" class="primary">追加</button>
+        </div>
+        <ul id="task-list" class="list"></ul>
+        <div class="actions">
+          <button id="to-home" class="ghost">ホームへ</button>
+          <button id="to-kpi" class="ghost">KPI一覧へ</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI一覧 -->
+    <section id="tab-kpi" class="tab-section hidden">
+      <div class="card">
+        <h2>KPI一覧</h2>
+        <div class="kpi-input">
+          <input type="text" id="kpi-title-input" placeholder="KPIタイトル" />
+          <input type="date" id="kpi-deadline-input" />
+          <button id="add-kpi-btn" class="primary">追加</button>
+        </div>
+        <ul id="kpi-list" class="list"></ul>
+        <div class="actions">
+          <button id="kpi-to-home" class="ghost">ホームへ</button>
+          <button id="kpi-to-today" class="ghost">今日のタスクへ</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="last-updated">—</span>
+    <button id="force-save" class="ghost small">保存</button>
+    <span class="sep">|</span>
+    <span>ユーザー: <code id="uid-label">myUser</code></span>
+  </footer>
+
+  <!-- Firebase SDK (v10 modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // 🔐 あなたの Firebase 設定をここに貼り付けてください（既存プロジェクトのもの）
+    // const firebaseConfig = { ... };
+    // 既に index-3.html に設定があるなら、そのまま流用して OK
+
+    // ------------------------------------------------------------------
+    // 既存の index-3.html を流用する場合は、上の firebaseConfig を削除し、
+    // 下記の行をコメントアウトして、window.appFirebase を参照してもOKです。
+    // ここでは単体で動くよう、ダミーで window.firebaseConfig を参照します。
+    // ------------------------------------------------------------------
+    const cfg = window.firebaseConfig || undefined;
+    if (!cfg) {
+      console.warn("⚠️ firebaseConfig が未設定です。設定を貼り付けてください。");
+    }
+    const app = initializeApp(cfg || {});
+    const db = getFirestore(app);
+
+    // Firestore ラッパ（単一ドキュメントで集約）
+    const USER_ID = "myUser"; // 必要なら差し替え
+    const DATA_DOC = () => doc(db, "users", USER_ID);
+
+    window.saveData = async function saveData(payload){
+      const enriched = { ...payload, _updatedAt: serverTimestamp() };
+      await setDoc(DATA_DOC(), enriched, { merge: true });
+      return true;
+    };
+    window.loadData = async function loadData(){
+      const snap = await getDoc(DATA_DOC());
+      return snap.exists() ? snap.data() : null;
+    };
+
+    // アプリ本体
+    import App from "./app.js";
+    App({ saveData: window.saveData, loadData: window.loadData, userId: USER_ID });
+  </script>
+</body>
+</html>
