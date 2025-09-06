@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Firestoreにデータを保存
-    async async function saveDataToFirestore() {
+ async function saveDataToFirestore() {
         try {
             const __meta = await saveData("myUser", { activities: state.activities, dailyTasks: state.dailyTasks, timeline: state.timeline });
             state._meta = __meta || null;
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         
         if (needsMigration) {
-            saveData();
+            saveDataToFirestore();
         }
     }
 
@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
                 
                 if (needsUpdate || activity.timeline !== sourceTimeline) {
-                    saveData();
+                    saveDataToFirestore();
                     renderPage('home');
                 }
             } catch (error) {
@@ -536,7 +536,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
                 task.activityId !== activityId
             );
-            saveData();
+                    saveDataToFirestore();
         }
     }
 
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 updateProgressDisplay(activity);
                 
                 // データを保存
-                saveData();
+                    saveDataToFirestore();
             });
         });
         
@@ -736,7 +736,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         removeTaskFromToday(activity.id, taskToRemove);
                         
                         // データを保存
-                        saveData();
+                    saveDataToFirestore();
                         
                         // 再レンダリング
                         renderActivityDetail();
@@ -756,7 +756,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('save-notes-btn').addEventListener('click', () => {
             const notesContent = notesEditor.innerHTML;
             activity.notes = notesContent;
-            saveData();
+                    saveDataToFirestore();
             alert('備考が保存されました');
         });
         
@@ -1337,7 +1337,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             // データを保存
-            saveData();
+                    saveDataToFirestore();
         }
     }
 
@@ -1505,7 +1505,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
             
-            saveData();
+                    saveDataToFirestore();
         }
         
         // 完了した事業のタスクを除外する
@@ -1638,7 +1638,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 task.completed = checkbox.checked;
                 taskItem.classList.toggle('task-completed', checkbox.checked);
                 updateTaskCompletion();
-                saveData();
+                    saveDataToFirestore();
             });
             
             // 削除ボタンのイベントリスナーを設定
@@ -1670,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             state.dailyTasks[today].push(newTask);
-            saveData();
+                    saveDataToFirestore();
             
             // 入力フィールドをクリア
             taskInput.value = '';
@@ -1685,7 +1685,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const today = getCurrentDate();
         if (state.dailyTasks[today]) {
             state.dailyTasks[today] = state.dailyTasks[today].filter(task => task.id !== taskId);
-            saveData();
+                    saveDataToFirestore();
         }
     }
 
@@ -1762,7 +1762,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     if (selectedDate && isValidDate(selectedDate)) {
                         newItem = { text: kpiText, deadline: selectedDate, completed: false };
                         activity.kpis.push(newItem);
-                        saveData();
+                    saveDataToFirestore();
                         renderActivityDetail();
                     }
                 });
@@ -1816,7 +1816,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return;
         }
         
-        saveData();
+                    saveDataToFirestore();
         renderActivityDetail();
     }
     
@@ -2157,7 +2157,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 }
                 
-                saveData();
+                    saveDataToFirestore();
                 renderPage('activity-detail');
             }
         } else {
@@ -2204,7 +2204,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
             }
             
-            saveData();
+                    saveDataToFirestore();
             state.currentActivity = newActivity.id;
             renderPage('home');
         }
