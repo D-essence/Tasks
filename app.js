@@ -294,56 +294,64 @@ document.addEventListener('DOMContentLoaded', async function() {
         appContainer.innerHTML = '';
         
         let template;
-        
-        switch (page) {
-            case 'home':
-                template = document.getElementById('home-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderHomeData();
-                break;
-            case 'activity-detail':
-                template = document.getElementById('activity-detail-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderActivityDetail();
-                break;
-            case 'daily-tasks':
-                template = document.getElementById('daily-tasks-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderDailyTasks();
-                break;
-            case 'kpi-list':
-                template = document.getElementById('kpi-list-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderKpiList();
-                break;
-            case 'activity-form':
-                template = document.getElementById('activity-form-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                setupFormEventListeners();
-                if (state.editMode && state.currentActivity) {
-                    document.getElementById('form-title').textContent = '事業詳細編集';
-                    fillActivityForm();
-                }
-                break;
-            case 'dashboard':
-                template = document.getElementById('dashboard-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderDashboard();
-                break;
-            case 'timeline':
-                template = document.getElementById('timeline-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderTimeline();
-                break;
-            default:
-                template = document.getElementById('home-template');
-                appContainer.appendChild(document.importNode(template.content, true));
-                renderHomeData();
-                break;
+
+        try {
+            switch (page) {
+                case 'home':
+                    template = document.getElementById('home-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderHomeData();
+                    break;
+                case 'activity-detail':
+                    template = document.getElementById('activity-detail-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderActivityDetail();
+                    break;
+                case 'daily-tasks':
+                    template = document.getElementById('daily-tasks-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderDailyTasks();
+                    break;
+                case 'kpi-list':
+                    template = document.getElementById('kpi-list-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderKpiList();
+                    break;
+                case 'activity-form':
+                    template = document.getElementById('activity-form-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    setupFormEventListeners();
+                    if (state.editMode && state.currentActivity) {
+                        document.getElementById('form-title').textContent = '事業詳細編集';
+                        fillActivityForm();
+                    }
+                    break;
+                case 'dashboard':
+                    template = document.getElementById('dashboard-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderDashboard();
+                    break;
+                case 'timeline':
+                    template = document.getElementById('timeline-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderTimeline();
+                    break;
+                default:
+                    template = document.getElementById('home-template');
+                    appContainer.appendChild(document.importNode(template.content, true));
+                    renderHomeData();
+                    break;
+            }
+        } catch (error) {
+            console.error('ページのレンダリング中にエラーが発生しました:', error);
+            template = document.getElementById('home-template');
+            appContainer.appendChild(document.importNode(template.content, true));
+            renderHomeData();
+            state.currentPage = 'home';
+        } finally {
+            // メインのナビゲーションにイベントリスナーを設定
+            setupNavigationListeners();
         }
-        
-        // メインのナビゲーションにイベントリスナーを設定
-        setupNavigationListeners();
     }
 
     // ホーム画面のデータをレンダリングする関数
