@@ -841,28 +841,6 @@
       };
     </script>
 
-    <!-- 動作確認用のボタン -->
-    <button onclick="testSave()">Firestoreに保存</button>
-    <button onclick="testLoad()">Firestoreから読み込み</button>
-
-    <!-- 動作確認用の関数 -->
-    <script>
-      async function testSave() {
-        const state = {
-          activities: [{ id: 1, name: "テスト活動" }],
-          dailyTasks: { "2025-09-06": [{ id: 1, title: "テストタスク" }] },
-          timeline: { "2025-09-06": ["開始"] }
-        };
-        await saveData("myUser", state);
-        alert("保存しました！");
-      }
-
-      async function testLoad() {
-        const data = await loadData("myUser");
-        console.log("読み込んだデータ:", data);
-        alert("コンソールにデータを表示しました");
-      }
-    </script>
 
     <!-- あなたのアプリ本体 -->
     <script src="app-3.js"></script>
