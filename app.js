@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     // アプリケーションの状態
     const state = {
         currentPage: 'home',
@@ -7,56 +7,66 @@ document.addEventListener('DOMContentLoaded', async function() {
         dailyTasks: {},
         editMode: false,
         editingItem: null,
-        timeline: {} // 追加：タイムラインのデータ
+        timeline: {}, // 追加：タイムラインのデータ
+        userId: null
     };
 
-    // 初期データのロード（Firestoreから）
-    await loadDataFromFirestore();
-    // Firestore リアルタイム購読（他端末の変更を反映）
-    try {
-        if (typeof subscribeData === "function") {
-            // 端末識別ID（index側で発行）
-            const DEVICE_ID_KEY = "be-trillion-device-id";
-            const __deviceId = localStorage.getItem(DEVICE_ID_KEY) || "";
-            let __localMeta = null;
-            if (state && state._meta) __localMeta = state._meta;
+    function setupFirestoreSubscription() {
+        try {
+            if (typeof subscribeData === "function" && state.userId) {
+                const DEVICE_ID_KEY = "be-trillion-device-id";
+                const __deviceId = localStorage.getItem(DEVICE_ID_KEY) || "";
+                let __localMeta = state._meta || null;
 
-            window.__unsubscribeFirestore && window.__unsubscribeFirestore();
-            window.__unsubscribeFirestore = subscribeData("myUser", (data) => {
-                if (!data) return;
-                const remoteMeta = (data && data._meta) || null;
+                window.__unsubscribeFirestore && window.__unsubscribeFirestore();
+                window.__unsubscribeFirestore = subscribeData(state.userId, (data) => {
+                    if (!data) return;
+                    const remoteMeta = (data && data._meta) || null;
 
-                // 自分の直近保存は無視
-                if (remoteMeta && remoteMeta.deviceId && remoteMeta.deviceId === __deviceId) {
-                    state._meta = remoteMeta;
-                    return;
-                }
+                    if (remoteMeta && remoteMeta.deviceId && remoteMeta.deviceId === __deviceId) {
+                        state._meta = remoteMeta;
+                        return;
+                    }
 
-                const isNewer = !__localMeta || (remoteMeta && remoteMeta.updatedAt > __localMeta.updatedAt);
-                if (!isNewer) return;
+                    const isNewer = !__localMeta || (remoteMeta && remoteMeta.updatedAt > __localMeta.updatedAt);
+                    if (!isNewer) return;
 
-                state.activities = data.activities || [];
-                state.dailyTasks = data.dailyTasks || {};
-                state.timeline   = data.timeline   || {};
-                state._meta      = remoteMeta || null;
-                __localMeta      = state._meta;
+                    state.activities = data.activities || [];
+                    state.dailyTasks = data.dailyTasks || {};
+                    state.timeline   = data.timeline   || {};
+                    state._meta      = remoteMeta || null;
+                    __localMeta      = state._meta;
 
-                if (typeof renderHomePage === 'function') {
-                    // 既存の描画関数が多数あるはずなので、ホームに戻すか、現在ページを再描画
-                    renderHomePage();
-                } else if (typeof renderPage === "function") {
-                    renderPage(state.currentPage || "home");
-                }
-                if (typeof updateLastUpdated === "function") updateLastUpdated();
-            });
+                    if (typeof renderHomePage === 'function') {
+                        renderHomePage();
+                    } else if (typeof renderPage === "function") {
+                        renderPage(state.currentPage || "home");
+                    }
+                    if (typeof updateLastUpdated === "function") updateLastUpdated();
+                });
+            }
+        } catch (e) {
+            console.error("subscribeData error:", e);
         }
-    } catch (e) {
-        console.error("subscribeData error:", e);
     }
 
+    window.onUserLogin = async function(uid) {
+        state.userId = uid;
+        await loadDataFromFirestore();
+        setupFirestoreSubscription();
+        checkTimelineReset();
+        renderPage(state.currentPage);
+    };
 
-    // タイムラインのリセットをチェック
-    checkTimelineReset();
+    window.onUserLogout = function() {
+        state.userId = null;
+        window.__unsubscribeFirestore && window.__unsubscribeFirestore();
+        state.activities = [];
+        state.dailyTasks = {};
+        state.timeline = {};
+        state._meta = null;
+        renderPage('home');
+    };
 
     // アプリの初期化
     initApp();
@@ -64,14 +74,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 現在の日付を設定
     updateCurrentDate();
 
+    if (window.__currentUser) {
+        window.onUserLogin(window.__currentUser.uid);
+    } else {
+        window.onUserLogout();
+    }
+
     // =====================
     // データ管理機能
     // =====================
 
     // Firestoreからデータをロード
     async function loadDataFromFirestore() {
+        if (!state.userId) {
+            const initialData = initializeData();
+            state.activities = initialData.activities;
+            state.dailyTasks = initialData.dailyTasks;
+            state.timeline   = {};
+            return;
+        }
         try {
-            const data = await loadData("myUser"); // ← index.htmlで定義済みの関数を呼ぶ
+            const data = await loadData(state.userId); // ← index.htmlで定義済みの関数を呼ぶ
             state.activities = data.activities || [];
             state.dailyTasks = data.dailyTasks || {};
             state.timeline   = data.timeline   || {};
@@ -95,9 +118,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Firestoreにデータを保存
- async function saveDataToFirestore() {
+    async function saveDataToFirestore() {
+        if (!state.userId) return;
         try {
-            const __meta = await saveData("myUser", { activities: state.activities, dailyTasks: state.dailyTasks, timeline: state.timeline });
+            const __meta = await saveData(state.userId, { activities: state.activities, dailyTasks: state.dailyTasks, timeline: state.timeline });
             state._meta = __meta || null;
             updateLastUpdated();
         } catch (error) {
