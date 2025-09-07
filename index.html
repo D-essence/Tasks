@@ -142,6 +142,14 @@
                 <h1 class="document-title">事業・活動進捗管理</h1>
                 <p class="document-subtitle">戦略的事業展開のためのマスタープラン</p>
                 <div class="document-date">最終更新: <span id="last-updated-date"></span></div>
+                <div class="account-menu">
+                    <button id="account-btn" class="account-icon"><i class="fas fa-user"></i></button>
+                    <div id="account-dropdown" class="account-dropdown">
+                        <div id="auth-status" class="account-status">ゲスト</div>
+                        <button id="login-btn">ログイン</button>
+                        <button id="logout-btn" style="display:none;">ログアウト</button>
+                    </div>
+                </div>
             </header>
             
             <nav class="document-nav">
@@ -781,10 +789,11 @@
         </div>
     </template>
 
-    <!-- Firebase 初期化と Firestore の設定 -->
+    <!-- Firebase 初期化と Firestore + Auth の設定 -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
       import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+      import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
@@ -798,6 +807,52 @@
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+
+      window.firebaseLogin = function() {
+        signInWithPopup(auth, provider).catch(err => console.error('login error:', err));
+      };
+
+      window.firebaseLogout = function() {
+        signOut(auth).catch(err => console.error('logout error:', err));
+      };
+
+      function getAuthElements() {
+        return {
+          loginBtn: document.getElementById('login-btn'),
+          logoutBtn: document.getElementById('logout-btn'),
+          authStatus: document.getElementById('auth-status')
+        };
+      }
+
+      window.updateAuthUI = function(user) {
+        const { loginBtn, logoutBtn, authStatus } = getAuthElements();
+        if (!authStatus) return;
+        if (user) {
+          authStatus.textContent = user.displayName || 'ユーザー';
+          if (loginBtn) loginBtn.style.display = 'none';
+          if (logoutBtn) logoutBtn.style.display = 'block';
+        } else {
+          authStatus.textContent = 'ゲスト';
+          if (loginBtn) loginBtn.style.display = 'block';
+          if (logoutBtn) logoutBtn.style.display = 'none';
+        }
+      };
+
+      onAuthStateChanged(auth, user => {
+        window.__currentUser = user;
+        window.updateAuthUI(user);
+        if (user) {
+          if (typeof window.onUserLogin === 'function') {
+            window.onUserLogin(user.uid);
+          }
+        } else {
+          if (typeof window.onUserLogout === 'function') {
+            window.onUserLogout();
+          }
+        }
+      });
 
       // 端末ID（自己エコーバック防止）
       const DEVICE_ID_KEY = "be-trillion-device-id";

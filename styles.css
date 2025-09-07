@@ -38,6 +38,59 @@ body {
     font-size: 14px;
 }
 
+
+.account-menu {
+    margin-top: 10px;
+    text-align: right;
+    position: relative;
+}
+
+.account-icon {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.account-dropdown {
+    position: absolute;
+    right: 0;
+    top: 110%;
+    background: white;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    display: none;
+    min-width: 120px;
+    z-index: 1000;
+}
+
+.account-dropdown.open {
+    display: block;
+}
+
+.account-status {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+
+.account-dropdown button {
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.account-dropdown button:hover {
+    background-color: var(--accent-light);
+}
+
 .app-container {
     min-height: 100vh;
     display: flex;
