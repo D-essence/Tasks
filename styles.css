@@ -78,6 +78,49 @@ body {
     position: relative;
 }
 
+.account-menu {
+    position: relative;
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+#account-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 1rem;
+}
+
+.account-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.25rem;
+    list-style: none;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    min-width: 150px;
+    z-index: 100;
+    padding: 0.5rem 0;
+    color: var(--text-color);
+}
+
+.account-dropdown li {
+    padding: 0.25rem 1rem;
+}
+
+.account-dropdown li:hover {
+    background-color: #f0f0f0;
+}
+
+.hidden {
+    display: none;
+}
+
 .detail-header {
     display: flex;
     align-items: center;

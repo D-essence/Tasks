@@ -375,6 +375,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             // メインのナビゲーションにイベントリスナーを設定
             setupNavigationListeners();
+            if (typeof initAccountMenu === 'function') {
+                initAccountMenu();
+            }
         }
     }
 

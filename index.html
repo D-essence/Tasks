@@ -131,11 +131,6 @@
     </style>
 </head>
 <body>
-    <div id="auth-container" class="auth-container">
-        <span id="auth-status">未ログイン</span>
-        <button id="login-btn">ログイン</button>
-        <button id="logout-btn" style="display:none;">ログアウト</button>
-    </div>
     <div id="app" class="app-container">
         <!-- コンテンツはJavaScriptで動的に挿入されます -->
     </div>
@@ -147,6 +142,14 @@
                 <h1 class="document-title">事業・活動進捗管理</h1>
                 <p class="document-subtitle">戦略的事業展開のためのマスタープラン</p>
                 <div class="document-date">最終更新: <span id="last-updated-date"></span></div>
+                <div class="account-menu">
+                    <button id="account-btn"><i class="fa-solid fa-user"></i><span id="account-email"></span></button>
+                    <ul id="account-dropdown" class="account-dropdown hidden">
+                        <li id="account-status">ゲスト</li>
+                        <li><a href="#" id="dropdown-login">ログイン</a></li>
+                        <li><a href="#" id="dropdown-logout">ログアウト</a></li>
+                    </ul>
+                </div>
             </header>
             
             <nav class="document-nav">
@@ -807,31 +810,68 @@
       const auth = getAuth(app);
       const provider = new GoogleAuthProvider();
 
-      const loginBtn = document.getElementById('login-btn');
-      const logoutBtn = document.getElementById('logout-btn');
-      const authStatus = document.getElementById('auth-status');
+      let accountBtn, accountDropdown, accountStatus, accountEmail, loginLink, logoutLink;
 
-      loginBtn.addEventListener('click', () => {
-        signInWithPopup(auth, provider).catch(err => console.error('login error:', err));
-      });
+      function updateAccountUI(user) {
+        if (!accountStatus || !loginLink || !logoutLink || !accountEmail) return;
+        if (user) {
+          const email = user.email || `${user.displayName || 'ユーザー'}`;
+          accountStatus.textContent = email;
+          accountEmail.textContent = email;
+          loginLink.style.display = 'none';
+          logoutLink.style.display = 'block';
+        } else {
+          accountStatus.textContent = 'ゲスト';
+          accountEmail.textContent = '';
+          loginLink.style.display = 'block';
+          logoutLink.style.display = 'none';
+        }
+      }
 
-      logoutBtn.addEventListener('click', () => {
-        signOut(auth).catch(err => console.error('logout error:', err));
-      });
+      window.initAccountMenu = function() {
+        accountBtn = document.getElementById('account-btn');
+        accountDropdown = document.getElementById('account-dropdown');
+        accountStatus = document.getElementById('account-status');
+        accountEmail = document.getElementById('account-email');
+        loginLink = document.getElementById('dropdown-login');
+        logoutLink = document.getElementById('dropdown-logout');
+
+        if (!accountBtn) return;
+
+        accountBtn.addEventListener('click', () => {
+          accountDropdown.classList.toggle('hidden');
+        });
+
+        if (!window.__accountMenuOutsideListener) {
+          window.__accountMenuOutsideListener = (e) => {
+            if (!accountBtn.contains(e.target) && !accountDropdown.contains(e.target)) {
+              accountDropdown.classList.add('hidden');
+            }
+          };
+          document.addEventListener('click', window.__accountMenuOutsideListener);
+        }
+
+        loginLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          signInWithPopup(auth, provider).catch(err => console.error('login error:', err));
+        });
+
+        logoutLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          signOut(auth).catch(err => console.error('logout error:', err));
+        });
+
+        updateAccountUI(window.__currentUser);
+      };
 
       onAuthStateChanged(auth, user => {
         window.__currentUser = user;
+        updateAccountUI(user);
         if (user) {
-          authStatus.textContent = `${user.displayName || 'ユーザー'}でログイン中`;
-          loginBtn.style.display = 'none';
-          logoutBtn.style.display = 'inline-block';
           if (typeof window.onUserLogin === 'function') {
             window.onUserLogin(user.uid);
           }
         } else {
-          authStatus.textContent = '未ログイン';
-          loginBtn.style.display = 'inline-block';
-          logoutBtn.style.display = 'none';
           if (typeof window.onUserLogout === 'function') {
             window.onUserLogout();
           }
