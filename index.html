@@ -131,6 +131,11 @@
     </style>
 </head>
 <body>
+    <div id="auth-container" class="auth-container">
+        <span id="auth-status">未ログイン</span>
+        <button id="login-btn">ログイン</button>
+        <button id="logout-btn" style="display:none;">ログアウト</button>
+    </div>
     <div id="app" class="app-container">
         <!-- コンテンツはJavaScriptで動的に挿入されます -->
     </div>
@@ -781,10 +786,11 @@
         </div>
     </template>
 
-    <!-- Firebase 初期化と Firestore の設定 -->
+    <!-- Firebase 初期化と Firestore + Auth の設定 -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
       import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+      import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyCCmNMhbz1G35de_AkkebVW53xAZc1kYwI",
@@ -798,6 +804,39 @@
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+
+      const loginBtn = document.getElementById('login-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+      const authStatus = document.getElementById('auth-status');
+
+      loginBtn.addEventListener('click', () => {
+        signInWithPopup(auth, provider).catch(err => console.error('login error:', err));
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        signOut(auth).catch(err => console.error('logout error:', err));
+      });
+
+      onAuthStateChanged(auth, user => {
+        window.__currentUser = user;
+        if (user) {
+          authStatus.textContent = `${user.displayName || 'ユーザー'}でログイン中`;
+          loginBtn.style.display = 'none';
+          logoutBtn.style.display = 'inline-block';
+          if (typeof window.onUserLogin === 'function') {
+            window.onUserLogin(user.uid);
+          }
+        } else {
+          authStatus.textContent = '未ログイン';
+          loginBtn.style.display = 'inline-block';
+          logoutBtn.style.display = 'none';
+          if (typeof window.onUserLogout === 'function') {
+            window.onUserLogout();
+          }
+        }
+      });
 
       // 端末ID（自己エコーバック防止）
       const DEVICE_ID_KEY = "be-trillion-device-id";
