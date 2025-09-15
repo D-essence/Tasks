@@ -5,130 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>事業・活動進捗管理</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <style>
-        /* タイムラインページのレイアウト調整用スタイル */
-        .timeline-container-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .timeline-container {
-            flex: 1;
-            margin-bottom: 0 !important;
-        }
-        
-        .timeline-sidebar {
-            width: 100%;
-            flex-shrink: 0;
-            height: 300px;
-        }
-        
-        .timeline-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 10px;
-        }
-        
-        .timeline-tab {
-            padding: 10px 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-secondary);
-            border-bottom: 2px solid transparent;
-        }
-        
-        .timeline-tab.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
-        }
-        
-        .timeline-tab-content {
-            display: none;
-            max-height: 250px;
-            overflow-y: auto;
-        }
-        
-        .timeline-tab-content.active {
-            display: block;
-        }
-        
-        .time-slot {
-            min-height: 40px;
-        }
-        
-        .current-time-indicator {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: #3498db;
-            z-index: 5;
-            pointer-events: none;
-        }
-        
-        .current-time-label {
-            position: absolute;
-            left: 0;
-            background-color: #3498db;
-            color: white;
-            font-size: 0.7rem;
-            padding: 2px 5px;
-            border-radius: 3px;
-            transform: translateY(-50%);
-        }
-        
-        .timeline-body {
-            position: relative;
-            max-height: 500px;
-        }
-        
-        .time-content {
-            display: flex;
-            align-items: flex-start;
-            flex-wrap: nowrap;
-            gap: 8px;
-            overflow-x: auto;
-        }
-        
-        .timeline-item {
-            flex: 0 0 auto;
-            min-width: 200px;
-            width: auto;
-            margin-bottom: 0;
-        }
-        
-        .draggable-item {
-            position: relative;
-        }
-        
-        .kpi-deadline-tag {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background-color: #f39c12;
-            color: white;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 10px;
-            white-space: nowrap;
-        }
-        
-        @media (max-width: 768px) {
-            .timeline-container-wrapper {
-                flex-direction: column;
-            }
-            
-            .timeline-sidebar {
-                width: 100%;
-            }
-        }
-    </style>
 </head>
 <body>
     <div id="app" class="app-container">
@@ -158,8 +34,6 @@
                     <li><a href="#" data-page="home" class="nav-link active">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
-                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
-                    <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
                 </ul>
             </nav>
             
@@ -408,8 +282,6 @@
                     <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link active">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
-                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
-                    <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
                 </ul>
             </nav>
             
@@ -458,8 +330,6 @@
                     <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
                     <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
                     <li><a href="#" data-page="kpi-list" class="nav-link active">KPI一覧</a></li>
-                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
-                    <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
                 </ul>
             </nav>
             
@@ -581,214 +451,6 @@
             </footer>
         </div>
     </template>
-
-    <!-- テンプレート: ダッシュボード画面 -->
-    <template id="dashboard-template">
-        <div class="document">
-            <header class="document-header">
-                <h1 class="document-title">ダッシュボード</h1>
-                <p class="document-subtitle">事業進捗の統計情報と分析</p>
-                <div class="document-date">日付: <span id="dashboard-current-date"></span></div>
-            </header>
-            
-            <nav class="document-nav">
-                <h2 class="nav-title">目次</h2>
-                <ul class="nav-links">
-                    <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
-                    <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
-                    <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
-                    <li><a href="#" data-page="timeline" class="nav-link">タイムライン</a></li>
-                    <li><a href="#" data-page="dashboard" class="nav-link active">ダッシュボード</a></li>
-                </ul>
-            </nav>
-            
-            <main class="document-body">
-                <div class="dashboard-grid">
-                    <!-- 事業全体の進捗状況 -->
-                    <div class="dashboard-card progress-overview">
-                        <h3 class="dashboard-card-title">全体進捗状況</h3>
-                        <div class="progress-stats">
-                            <div class="progress-pie-container">
-                                <canvas id="progress-pie-chart"></canvas>
-                            </div>
-                            <div class="progress-stats-details">
-                                <div class="stat-row">
-                                    <div class="stat-label">計画済み事業</div>
-                                    <div class="stat-value" id="planned-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">進行中事業</div>
-                                    <div class="stat-value" id="progress-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">完了事業</div>
-                                    <div class="stat-value" id="complete-count">0</div>
-                                </div>
-                                <div class="stat-row total">
-                                    <div class="stat-label">合計</div>
-                                    <div class="stat-value" id="total-activities-count">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- KPI達成状況 -->
-                    <div class="dashboard-card kpi-progress">
-                        <h3 class="dashboard-card-title">KPI達成状況</h3>
-                        <div class="kpi-stats">
-                            <div class="kpi-pie-container">
-                                <canvas id="kpi-pie-chart"></canvas>
-                            </div>
-                            <div class="kpi-stats-details">
-                                <div class="stat-row">
-                                    <div class="stat-label">達成済みKPI</div>
-                                    <div class="stat-value" id="completed-kpi-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">未達成KPI</div>
-                                    <div class="stat-value" id="pending-kpi-count">0</div>
-                                </div>
-                                <div class="stat-row total">
-                                    <div class="stat-label">合計KPI数</div>
-                                    <div class="stat-value" id="total-kpi-count">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- タイムライン別進捗 -->
-                    <div class="dashboard-card timeline-progress">
-                        <h3 class="dashboard-card-title">タイムライン別進捗</h3>
-                        <div class="timeline-chart-container">
-                            <canvas id="timeline-bar-chart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- タスク完了率 -->
-                    <div class="dashboard-card task-completion">
-                        <h3 class="dashboard-card-title">今日のタスク完了率</h3>
-                        <div class="task-completion-chart">
-                            <div class="task-chart-container">
-                                <canvas id="task-doughnut-chart"></canvas>
-                            </div>
-                            <div class="task-stats">
-                                <div class="stat-row">
-                                    <div class="stat-label">完了タスク</div>
-                                    <div class="stat-value" id="completed-tasks-count">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">未完了タスク</div>
-                                    <div class="stat-value" id="pending-tasks-count">0</div>
-                                </div>
-                                <div class="stat-row total">
-                                    <div class="stat-label">合計タスク数</div>
-                                    <div class="stat-value" id="total-tasks-count">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 期限が近いKPI -->
-                    <div class="dashboard-card upcoming-deadlines">
-                        <h3 class="dashboard-card-title">期限が近いKPI</h3>
-                        <div class="upcoming-kpi-list" id="upcoming-kpi-list">
-                            <!-- ここに期限が近いKPIが表示されます -->
-                        </div>
-                    </div>
-                    
-                    <!-- 最近の活動 -->
-                    <div class="dashboard-card recent-activities">
-                        <h3 class="dashboard-card-title">最近の進捗状況</h3>
-                        <div class="activity-list" id="recent-activities-list">
-                            <!-- ここに最近の活動が表示されます -->
-                        </div>
-                    </div>
-                </div>
-            </main>
-            
-            <footer class="document-footer">
-                <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
-                <div class="footer-updated">最終更新：<span id="dashboard-last-updated"></span></div>
-            </footer>
-        </div>
-    </template>
-
-    <!-- テンプレート: タイムラインページ -->
-    <template id="timeline-template">
-        <div class="document">
-            <header class="document-header">
-                <h1 class="document-title">タイムライン</h1>
-                <p class="document-subtitle">今日の予定表</p>
-                <div class="document-date">日付: <span id="timeline-current-date"></span></div>
-            </header>
-            
-            <nav class="document-nav">
-                <h2 class="nav-title">目次</h2>
-                <ul class="nav-links">
-                    <li><a href="#" data-page="home" class="nav-link">ホーム</a></li>
-                    <li><a href="#" data-page="daily-tasks" class="nav-link">今日のタスク</a></li>
-                    <li><a href="#" data-page="kpi-list" class="nav-link">KPI一覧</a></li>
-                    <li><a href="#" data-page="timeline" class="nav-link active">タイムライン</a></li>
-                    <li><a href="#" data-page="dashboard" class="nav-link">ダッシュボード</a></li>
-                </ul>
-            </nav>
-            
-            <main class="document-body">
-                <div class="timeline-control-bar">
-                    <div class="timeline-control-left">
-                        <button id="clear-timeline-btn" class="control-btn">
-                            <i class="fas fa-sync-alt"></i> タイムラインをクリア
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="timeline-container-wrapper">
-                    <div class="timeline-container">
-                        <div class="timeline-header">
-                            <div class="time-column">時間</div>
-                            <div class="schedule-column">スケジュール</div>
-                        </div>
-                        
-                        <div class="timeline-body" id="timeline-body">
-                            <!-- ここに時間枠がJSで動的に追加されます -->
-                        </div>
-                    </div>
-                    
-                    <div class="timeline-sidebar">
-                        <div class="timeline-tabs">
-                            <button class="timeline-tab active" data-tab="kpi">KPI</button>
-                            <button class="timeline-tab" data-tab="today">本日のタスク</button>
-                            <button class="timeline-tab" data-tab="daily">毎日のタスク</button>
-                        </div>
-                        
-                        <div class="timeline-tab-content active" id="kpi-tab-content">
-                            <div class="timeline-items-list" id="kpi-items-list">
-                                <!-- KPIのリストがここに表示されます -->
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-tab-content" id="today-tab-content">
-                            <div class="timeline-items-list" id="today-tasks-list">
-                                <!-- 今日のタスクのリストがここに表示されます -->
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-tab-content" id="daily-tab-content">
-                            <div class="timeline-items-list" id="daily-tasks-list-timeline">
-                                <!-- 毎日のタスクのリストがここに表示されます -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-            
-            <footer class="document-footer">
-                <div class="footer-copyright">© 2025 事業・活動進捗管理</div>
-                <div class="footer-updated">最終更新：<span id="timeline-footer-last-updated"></span></div>
-            </footer>
-        </div>
-    </template>
-
     <!-- Firebase 初期化と Firestore + Auth の設定 -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -907,7 +569,7 @@
         const uid = ensureUserId(userId);
         const snap = await getDoc(doc(db, "users", uid));
         if (snap.exists()) return snap.data();
-        return { activities: [], dailyTasks: {}, timeline: {} };
+        return { activities: [], dailyTasks: {} };
       };
 
       // リアルタイム購読
