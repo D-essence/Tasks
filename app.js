@@ -953,8 +953,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // フッターの更新日時を更新
-        document.getElementById('kpi-footer-last-updated').textContent = 
-            document.getElementById('last-updated-date').textContent;
+        const footerLastUpdated = document.getElementById('kpi-footer-last-updated');
+        if (footerLastUpdated) {
+            const now = new Date();
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            footerLastUpdated.textContent = now.toLocaleDateString('ja-JP', options);
+        }
     }
 
     // KPIカードを作成する関数
