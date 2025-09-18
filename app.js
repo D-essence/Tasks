@@ -100,11 +100,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // isRecurringフラグがない古いタスクに対してフラグを追加
             const today = getCurrentDate();
             if (state.dailyTasks[today]) {
+                let requiresSave = false;
                 state.dailyTasks[today].forEach(task => {
                     if (task.isRecurring === undefined) {
                         task.isRecurring = true;
+                        requiresSave = true;
                     }
                 });
+
+                if (requiresSave) {
+                    await saveDataToFirestore();
+                }
             }
         } catch (error) {
             console.error('データのロード中にエラーが発生しました:', error);
@@ -1272,10 +1278,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const completedActivityIds = state.activities
             .filter(a => a.completed)
             .map(a => a.id);
-            
-        state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
+
+        const todayTasks = state.dailyTasks[today];
+        const filteredTasks = todayTasks.filter(task =>
             !completedActivityIds.includes(task.activityId) || !task.isRecurring
         );
+        const tasksRemoved = filteredTasks.length !== todayTasks.length;
+        state.dailyTasks[today] = filteredTasks;
+
+        if (tasksRemoved) {
+            saveDataToFirestore();
+        }
         
         // タスクをグループ分け
         const recurringTasks = state.dailyTasks[today].filter(task => task.isRecurring);
