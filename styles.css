@@ -1094,9 +1094,16 @@ body {
     font-size: 0.95rem;
 }
 
-.kpi-input-group {
+.input-group.kpi-input-group {
     display: grid;
-    grid-template-columns: 1fr 150px 180px auto;
+    grid-template-columns: minmax(0, 1fr) 150px 180px auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.input-group.task-input-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px auto;
     gap: 0.5rem;
     align-items: center;
 }
@@ -1122,6 +1129,7 @@ body {
 
 .assignee-select {
     min-width: 150px;
+    width: 100%;
     padding: 0.7rem;
     border: 1px solid var(--border-color);
     border-radius: var(--card-radius);
@@ -1140,7 +1148,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    width: a100%; /* Ensure inputs use full width */
+    width: 100%; /* Ensure inputs use full width */
 }
 
 .input-group {

@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     const ASSIGNEE_DISPLAY = {
-        [ASSIGNEES.YU]: { badge: '(ゆ)', title: 'ゆちゃんがやること' },
-        [ASSIGNEES.SAKI]: { badge: '(さ)', title: 'さきたんがやること' },
-        [ASSIGNEES.BOTH]: { badge: '(両)', title: 'ゆちゃんorさきたん' }
+        [ASSIGNEES.YU]: { badge: 'ゆちゃん', title: 'ゆちゃん' },
+        [ASSIGNEES.SAKI]: { badge: 'さきたん', title: 'さきたん' },
+        [ASSIGNEES.BOTH]: { badge: 'ゆちゃんorさきたん', title: 'ゆちゃんorさきたん' }
     };
 
     function normalizeAssignee(value) {
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (['sa', 'さ', 's', 'さき', 'saki', 'さきたん', 'sakitan'].includes(normalized)) {
             return ASSIGNEES.SAKI;
         }
-        if (['both', '両', 'りょう', 'ryo', 'ryou', 'all', 'どちらでも'].includes(normalized)) {
+        if (['both', '両', 'りょう', 'ryo', 'ryou', 'all', 'どちらでも', 'ゆちゃんorさきたん'].includes(normalized)) {
             return ASSIGNEES.BOTH;
         }
 
@@ -42,9 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getAssigneeOptionsHTML(selectedValue = ASSIGNEES.BOTH) {
         return `
-            <option value="${ASSIGNEES.YU}" ${selectedValue === ASSIGNEES.YU ? 'selected' : ''}>(ゆ) ゆちゃん</option>
-            <option value="${ASSIGNEES.SAKI}" ${selectedValue === ASSIGNEES.SAKI ? 'selected' : ''}>(さ) さきたん</option>
-            <option value="${ASSIGNEES.BOTH}" ${selectedValue === ASSIGNEES.BOTH ? 'selected' : ''}>(両) ゆちゃんorさきたん</option>
+            <option value="${ASSIGNEES.YU}" ${selectedValue === ASSIGNEES.YU ? 'selected' : ''}>ゆちゃん</option>
+            <option value="${ASSIGNEES.SAKI}" ${selectedValue === ASSIGNEES.SAKI ? 'selected' : ''}>さきたん</option>
+            <option value="${ASSIGNEES.BOTH}" ${selectedValue === ASSIGNEES.BOTH ? 'selected' : ''}>ゆちゃんorさきたん</option>
         `;
     }
 
@@ -110,9 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function promptForAssignee(defaultValue = ASSIGNEES.BOTH) {
-        const defaultBadge = ASSIGNEE_DISPLAY[defaultValue]?.badge || '(両)';
-        const defaultInput = defaultBadge.replace(/[()]/g, '');
-        const input = prompt('担当を選択してください：(ゆ)/(さ)/(両)', defaultInput);
+        const defaultBadge = ASSIGNEE_DISPLAY[defaultValue]?.badge || 'ゆちゃんorさきたん';
+        const input = prompt('担当を選択してください：ゆちゃん/さきたん/ゆちゃんorさきたん', defaultBadge);
         if (input === null) {
             return null;
         }
