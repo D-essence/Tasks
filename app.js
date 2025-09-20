@@ -48,16 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    function getAssigneeBadge(value) {
-        const key = normalizeAssignee(value);
-        return ASSIGNEE_DISPLAY[key]?.badge || ASSIGNEE_DISPLAY[ASSIGNEES.BOTH].badge;
-    }
-
-    function getAssigneeTitle(value) {
-        const key = normalizeAssignee(value);
-        return ASSIGNEE_DISPLAY[key]?.title || ASSIGNEE_DISPLAY[ASSIGNEES.BOTH].title;
-    }
-
     function convertActivityDailyTasks(tasksArray) {
         if (!Array.isArray(tasksArray)) return [];
 
@@ -746,9 +736,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
             const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : null;
             const isCompleted = typeof kpi === 'object' && kpi.completed;
-            const assigneeBadge = getAssigneeBadge(kpi.assignee);
-            const assigneeTitle = getAssigneeTitle(kpi.assignee);
-
             let deadlineHTML = '';
             if (kpiDeadline) {
                 const timeRemaining = getTimeRemaining(kpiDeadline);
@@ -764,8 +751,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             kpiItem.innerHTML = `
                 <div class="detail-item-content ${isCompleted ? 'completed-kpi' : ''}">
-                    <span class="detail-assignee-badge">${assigneeBadge}</span>
-                    <span class="detail-assignee-text">${assigneeTitle}</span>
                     <span class="detail-item-text">${kpiText}</span>
                 </div>
                 ${deadlineHTML}
@@ -851,13 +836,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 taskItem.dataset.assignee = normalizeAssignee(task.assignee);
 
                 const taskText = typeof task === 'object' ? task.text : task;
-                const assigneeBadge = getAssigneeBadge(task.assignee);
-                const assigneeTitle = getAssigneeTitle(task.assignee);
 
                 taskItem.innerHTML = `
                     <div class="detail-item-content">
-                        <span class="detail-assignee-badge">${assigneeBadge}</span>
-                        <span class="detail-assignee-text">${assigneeTitle}</span>
                         <span class="detail-item-text">${taskText}</span>
                     </div>
                     <div class="detail-item-actions">
@@ -1154,19 +1135,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
 
-        const assigneeBadge = getAssigneeBadge(kpi.assignee);
-        const assigneeTitle = getAssigneeTitle(kpi.assignee);
-
         card.innerHTML = `
             <div class="kpi-card-content">
                 <div class="kpi-checkbox-container">
                     <input type="checkbox" class="kpi-checkbox" ${kpi.completed ? 'checked' : ''}>
                 </div>
                 <div class="kpi-info">
-                    <div class="kpi-header">
-                        <span class="kpi-assignee-badge">${assigneeBadge}</span>
-                        <span class="kpi-assignee-text">${assigneeTitle}</span>
-                    </div>
                     <div class="kpi-text ${kpi.completed ? 'completed-text' : ''}">${kpi.text}</div>
                     <div class="kpi-activity">${kpi.activityName}</div>
                 </div>
@@ -1544,7 +1518,6 @@ document.addEventListener('DOMContentLoaded', function() {
             taskItem.dataset.assignee = normalizeAssignee(task.assignee);
 
             const taskName = task.name || task.text || '';
-            const assigneeBadge = getAssigneeBadge(task.assignee);
 
             let activityInfo = '';
             if (task.activityName) {
@@ -1557,7 +1530,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="task-content">
                     <div class="task-header">
-                        <span class="task-assignee-badge">${assigneeBadge}</span>
                         <div class="task-name">${taskName}</div>
                     </div>
                     ${activityInfo}

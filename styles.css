@@ -646,11 +646,6 @@ body {
     transition: all 0.2s ease;
 }
 
-.detail-assignee-text {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
 .detail-item-text {
     font-weight: 500;
 }
@@ -989,55 +984,8 @@ body {
     margin-bottom: 0.25rem;
 }
 
-.task-assignee-badge,
-.detail-assignee-badge,
-.kpi-assignee-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 999px;
-    padding: 0.1rem 0.4rem;
-    background-color: rgba(52, 152, 219, 0.12);
-    color: var(--accent-color);
-}
-
-.task-item[data-assignee="yu"] .task-assignee-badge,
-.detail-list-item[data-assignee="yu"] .detail-assignee-badge,
-.kpi-card[data-assignee="yu"] .kpi-assignee-badge {
-    background-color: #ffe6f0;
-    color: #c0392b;
-}
-
-.task-item[data-assignee="saki"] .task-assignee-badge,
-.detail-list-item[data-assignee="saki"] .detail-assignee-badge,
-.kpi-card[data-assignee="saki"] .kpi-assignee-badge {
-    background-color: #ede6ff;
-    color: #8e44ad;
-}
-
-.task-item[data-assignee="both"] .task-assignee-badge,
-.detail-list-item[data-assignee="both"] .detail-assignee-badge,
-.kpi-card[data-assignee="both"] .kpi-assignee-badge {
-    background-color: #e6f7f5;
-    color: #16a085;
-}
-
 .kpi-assignee-section {
     margin-bottom: 2rem;
-}
-
-.kpi-header {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.4rem;
-}
-
-.kpi-assignee-text {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
 }
 
 .task-checkbox-wrapper {
