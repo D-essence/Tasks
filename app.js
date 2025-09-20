@@ -380,16 +380,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const completedActivities = state.activities.filter(a => a.progress >= 100 || a.completed);
         
         // 進行中と完了済みを除いたアクティビティ
-        const shortTermActivities = state.activities.filter(a => 
+        const shortTermActivities = state.activities.filter(a =>
             a.timeline === 'short-term' && a.progress < 20 && !a.completed);
-        const mediumTermActivities = state.activities.filter(a => 
-            a.timeline === 'medium-term' && a.progress < 20 && !a.completed);
-        const longTermActivities = state.activities.filter(a => 
-            a.timeline === 'long-term' && a.progress < 20 && !a.completed);
+        const longTermActivities = state.activities.filter(a =>
+            (a.timeline === 'long-term' || a.timeline === 'medium-term') && a.progress < 20 && !a.completed);
         
         // 事業数のカウントを更新
         document.getElementById('short-term-count').textContent = shortTermActivities.length;
-        document.getElementById('medium-term-count').textContent = mediumTermActivities.length;
         document.getElementById('long-term-count').textContent = longTermActivities.length;
         document.getElementById('in-progress-count').textContent = inProgressActivities.length;
         document.getElementById('completed-count').textContent = completedActivities.length;
@@ -397,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 各カテゴリごとに事業カードをレンダリング
         renderActivityCards('short-term-cards', shortTermActivities, 'short-term');
-        renderActivityCards('medium-term-cards', mediumTermActivities, 'medium-term');
         renderActivityCards('long-term-cards', longTermActivities, 'long-term');
         renderActivityCards('in-progress-cards', inProgressActivities, 'in-progress');
         renderActivityCards('completed-cards', completedActivities, 'completed');
@@ -506,13 +502,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 switch(zoneClass) {
                     case 'short-term':
                         activity.timeline = 'short-term';
-                        if (activity.completed) {
-                            activity.completed = false;
-                            needsUpdate = true;
-                        }
-                        break;
-                    case 'medium-term':
-                        activity.timeline = 'medium-term';
                         if (activity.completed) {
                             activity.completed = false;
                             needsUpdate = true;
@@ -1621,7 +1610,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('activity-name').value = activity.name;
         document.getElementById('activity-purpose').value = activity.purpose;
-        document.getElementById('activity-timeline').value = activity.timeline;
+        const timelineField = document.getElementById('activity-timeline');
+        if (timelineField) {
+            timelineField.value = activity.timeline === 'short-term' ? 'short-term' : 'long-term';
+        }
         document.getElementById('activity-progress').value = activity.progress;
         
         // KPIの入力フィールドを作成
@@ -2019,7 +2011,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add('active');
 
                 // ホームページでのセクションジャンプ処理
-                if (state.currentPage === 'home' && ['short-term', 'medium-term', 'long-term', 'in-progress', 'completed'].includes(page)) {
+                if (state.currentPage === 'home' && ['short-term', 'long-term', 'in-progress', 'completed'].includes(page)) {
                     // ページ内のセクションにスクロール
                     const section = document.getElementById(page);
                     if (section) {
