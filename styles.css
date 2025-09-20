@@ -440,13 +440,6 @@ body {
     padding-left: 0.5rem;
 }
 
-.activity-purpose {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    padding-left: 0.5rem;
-}
-
 .activity-progress {
     margin-top: 1rem;
 }

@@ -423,7 +423,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             card.innerHTML = `
                 <h4 class="activity-name">${activity.name}</h4>
-                <p class="activity-purpose">${activity.purpose}</p>
                 <div class="activity-progress">
                     <div class="activity-progress-wrapper">
                         <div class="progress-bar-container">
@@ -605,7 +604,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!activity) return;
         
         document.getElementById('detail-activity-name').textContent = activity.name;
-        document.getElementById('detail-activity-purpose').textContent = activity.purpose;
         
         // 進捗バーを更新
         updateProgressDisplay(activity);
@@ -1609,7 +1607,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!activity) return;
         
         document.getElementById('activity-name').value = activity.name;
-        document.getElementById('activity-purpose').value = activity.purpose;
         const timelineField = document.getElementById('activity-timeline');
         if (timelineField) {
             timelineField.value = activity.timeline === 'short-term' ? 'short-term' : 'long-term';
@@ -1826,7 +1823,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // フォームからデータを取得
         const name = document.getElementById('activity-name').value;
-        const purpose = document.getElementById('activity-purpose').value;
         const timeline = document.getElementById('activity-timeline').value;
         const formProgress = parseInt(document.getElementById('activity-progress').value);
         
@@ -1894,10 +1890,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     calculatedProgress = formProgress;
                 }
                 
+                const { purpose: _deprecatedPurpose, ...activityWithoutPurpose } = oldActivity;
+
                 const updatedActivity = {
-                    ...oldActivity,
+                    ...activityWithoutPurpose,
                     name,
-                    purpose,
                     timeline,
                     progress: calculatedProgress,
                     completed: calculatedProgress >= 100 || oldActivity.completed,
@@ -1948,7 +1945,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const newActivity = {
                 id: generateId(),
                 name,
-                purpose,
                 timeline,
                 progress: calculatedProgress,
                 completed: calculatedProgress >= 100,
