@@ -375,6 +375,11 @@
                             <div class="input-group kpi-input-group">
                                 <input type="text" class="kpi-input" placeholder="KPI" required>
                                 <input type="date" class="kpi-date-input" required>
+                                <select class="kpi-assignee-select assignee-select">
+                                    <option value="yu">(ゆ) ゆちゃん</option>
+                                    <option value="saki">(さ) さきたん</option>
+                                    <option value="both" selected>(両) ゆちゃんorさきたん</option>
+                                </select>
                                 <button type="button" class="add-item-btn kpi-add-btn">
                                     <i class="fas fa-plus"></i>
                                 </button>
@@ -397,8 +402,13 @@
                     <div class="form-group">
                         <label>毎日のタスク</label>
                         <div id="task-inputs" class="dynamic-inputs">
-                            <div class="input-group">
+                            <div class="input-group task-input-group">
                                 <input type="text" class="task-input" placeholder="タスク">
+                                <select class="task-assignee-select assignee-select">
+                                    <option value="yu">(ゆ) ゆちゃん</option>
+                                    <option value="saki">(さ) さきたん</option>
+                                    <option value="both" selected>(両) ゆちゃんorさきたん</option>
+                                </select>
                                 <button type="button" class="add-item-btn task-add-btn">
                                     <i class="fas fa-plus"></i>
                                 </button>
