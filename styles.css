@@ -9,7 +9,6 @@
     --text-secondary: #5f6b7a;
     --bg-color: #f8f9fa;
     --short-term-color: #2980b9;
-    --medium-term-color: #27ae60;
     --long-term-color: #f39c12;
     --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     --card-radius: 6px;
@@ -337,10 +336,6 @@ body {
     background-color: var(--short-term-color);
 }
 
-.timeline-marker.medium-term {
-    background-color: var(--medium-term-color);
-}
-
 .timeline-marker.long-term {
     background-color: var(--long-term-color);
 }
@@ -419,10 +414,6 @@ body {
 
 .activity-card.short-term::before {
     background-color: var(--short-term-color);
-}
-
-.activity-card.medium-term::before {
-    background-color: var(--medium-term-color);
 }
 
 .activity-card.long-term::before {
@@ -513,10 +504,6 @@ body {
 
 .legend-color.short-term {
     background-color: var(--short-term-color);
-}
-
-.legend-color.medium-term {
-    background-color: var(--medium-term-color);
 }
 
 .legend-color.long-term {
@@ -1219,7 +1206,7 @@ body {
 }
 
 .edit-btn {
-    background-color: var(--medium-term-color);
+    background-color: #27ae60;
 }
 
 .edit-btn:hover {

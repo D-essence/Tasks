@@ -53,10 +53,6 @@
                             <div class="stat-label">短期事業（3日以内）</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number" id="medium-term-count">4</div>
-                            <div class="stat-label">中期事業（1ヶ月以内）</div>
-                        </div>
-                        <div class="stat-item">
                             <div class="stat-number" id="long-term-count">5</div>
                             <div class="stat-label">長期事業（時期不明）</div>
                         </div>
@@ -103,23 +99,9 @@
                     </div>
                 </section>
                 
-                <section id="medium-term" class="document-section">
-                    <h2 class="section-title">中期計画（1ヶ月以内に開始）</h2>
-                    
-                    <div class="timeline-container">
-                        <div class="timeline-line"></div>
-                        <div class="timeline-group">
-                            <div class="timeline-marker medium-term"></div>
-                            <div class="timeline-cards" id="medium-term-cards">
-                                <!-- 中期的な事業カードがここに動的に挿入されます -->
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                
                 <section id="long-term" class="document-section">
                     <h2 class="section-title">長期計画（時期不明）</h2>
-                    
+
                     <div class="timeline-container">
                         <div class="timeline-line"></div>
                         <div class="timeline-group">
@@ -149,10 +131,6 @@
                     <div class="legend-item">
                         <div class="legend-color short-term"></div>
                         <span class="legend-label">短期計画：3日以内に開始</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color medium-term"></div>
-                        <span class="legend-label">中期計画：1ヶ月以内に開始</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-color long-term"></div>
@@ -393,7 +371,6 @@
                         <label for="activity-timeline">期間</label>
                         <select id="activity-timeline" required>
                             <option value="short-term">短期（3日以内）</option>
-                            <option value="medium-term">中期（1ヶ月以内）</option>
                             <option value="long-term">長期（時期不明）</option>
                         </select>
                     </div>
