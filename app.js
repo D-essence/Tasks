@@ -11,6 +11,124 @@ document.addEventListener('DOMContentLoaded', function() {
         dataLoaded: false
     };
 
+    const ASSIGNEES = {
+        YU: 'yu',
+        SAKI: 'saki',
+        BOTH: 'both'
+    };
+
+    const ASSIGNEE_DISPLAY = {
+        [ASSIGNEES.YU]: { badge: '(ゆ)', title: 'ゆちゃんがやること' },
+        [ASSIGNEES.SAKI]: { badge: '(さ)', title: 'さきたんがやること' },
+        [ASSIGNEES.BOTH]: { badge: '(両)', title: 'ゆちゃんorさきたん' }
+    };
+
+    function normalizeAssignee(value) {
+        if (!value) return ASSIGNEES.BOTH;
+
+        const normalized = value.toString().trim().toLowerCase();
+        if (['yu', 'ゆ', 'y', 'ゆちゃん', 'yuchan'].includes(normalized)) {
+            return ASSIGNEES.YU;
+        }
+        if (['sa', 'さ', 's', 'さき', 'saki', 'さきたん', 'sakitan'].includes(normalized)) {
+            return ASSIGNEES.SAKI;
+        }
+        if (['both', '両', 'りょう', 'ryo', 'ryou', 'all', 'どちらでも'].includes(normalized)) {
+            return ASSIGNEES.BOTH;
+        }
+
+        return Object.values(ASSIGNEES).includes(normalized) ? normalized : ASSIGNEES.BOTH;
+    }
+
+    function getAssigneeOptionsHTML(selectedValue = ASSIGNEES.BOTH) {
+        return `
+            <option value="${ASSIGNEES.YU}" ${selectedValue === ASSIGNEES.YU ? 'selected' : ''}>(ゆ) ゆちゃん</option>
+            <option value="${ASSIGNEES.SAKI}" ${selectedValue === ASSIGNEES.SAKI ? 'selected' : ''}>(さ) さきたん</option>
+            <option value="${ASSIGNEES.BOTH}" ${selectedValue === ASSIGNEES.BOTH ? 'selected' : ''}>(両) ゆちゃんorさきたん</option>
+        `;
+    }
+
+    function getAssigneeBadge(value) {
+        const key = normalizeAssignee(value);
+        return ASSIGNEE_DISPLAY[key]?.badge || ASSIGNEE_DISPLAY[ASSIGNEES.BOTH].badge;
+    }
+
+    function getAssigneeTitle(value) {
+        const key = normalizeAssignee(value);
+        return ASSIGNEE_DISPLAY[key]?.title || ASSIGNEE_DISPLAY[ASSIGNEES.BOTH].title;
+    }
+
+    function convertActivityDailyTasks(tasksArray) {
+        if (!Array.isArray(tasksArray)) return [];
+
+        return tasksArray.map(task => {
+            if (typeof task === 'object' && task !== null) {
+                return {
+                    text: task.text || task.name || '',
+                    assignee: normalizeAssignee(task.assignee)
+                };
+            }
+
+            return {
+                text: typeof task === 'string' ? task : '',
+                assignee: ASSIGNEES.BOTH
+            };
+        }).filter(task => task.text);
+    }
+
+    function normalizeStoredDailyTask(task) {
+        if (typeof task === 'object' && task !== null) {
+            return {
+                ...task,
+                id: task.id || generateId(),
+                name: task.name || task.text || '',
+                completed: task.completed === true,
+                isRecurring: task.isRecurring === true,
+                assignee: normalizeAssignee(task.assignee)
+            };
+        }
+
+        return {
+            id: generateId(),
+            name: typeof task === 'string' ? task : '',
+            completed: false,
+            isRecurring: false,
+            assignee: ASSIGNEES.BOTH
+        };
+    }
+
+    function normalizeDailyTasksObject(dailyTasksObj) {
+        if (!dailyTasksObj || typeof dailyTasksObj !== 'object') return {};
+
+        const normalized = {};
+        Object.keys(dailyTasksObj).forEach(date => {
+            const tasks = Array.isArray(dailyTasksObj[date]) ? dailyTasksObj[date] : [];
+            normalized[date] = tasks.map(task => normalizeStoredDailyTask(task));
+        });
+        return normalized;
+    }
+
+    function normalizeActivities() {
+        state.activities = (state.activities || []).map(activity => {
+            const updated = { ...activity };
+            updated.kpis = convertKPIs(updated.kpis || []);
+            updated.dailyTasks = convertActivityDailyTasks(updated.dailyTasks || []);
+            return updated;
+        });
+
+        state.dailyTasks = normalizeDailyTasksObject(state.dailyTasks || {});
+    }
+
+    function promptForAssignee(defaultValue = ASSIGNEES.BOTH) {
+        const defaultBadge = ASSIGNEE_DISPLAY[defaultValue]?.badge || '(両)';
+        const defaultInput = defaultBadge.replace(/[()]/g, '');
+        const input = prompt('担当を選択してください：(ゆ)/(さ)/(両)', defaultInput);
+        if (input === null) {
+            return null;
+        }
+        return normalizeAssignee(input);
+    }
+
     function setupFirestoreSubscription() {
         try {
             if (typeof subscribeData === "function" && state.userId) {
@@ -88,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const initialData = initializeData();
             state.activities = initialData.activities;
             state.dailyTasks = initialData.dailyTasks;
+            normalizeActivities();
             state.dataLoaded = false;
             return;
         }
@@ -95,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await loadData(state.userId); // ← index.htmlで定義済みの関数を呼ぶ
             state.activities = data.activities || [];
             state.dailyTasks = data.dailyTasks || {};
+            normalizeActivities();
             state.dataLoaded = true;
 
             // isRecurringフラグがない古いタスクに対してフラグを追加
@@ -117,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const initialData = initializeData();
             state.activities = initialData.activities;
             state.dailyTasks = initialData.dailyTasks;
+            normalizeActivities();
             state.dataLoaded = false;
         }
     }
@@ -269,15 +390,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof kpi === 'object' && kpi !== null) {
                 return {
                     ...kpi,
-                    completed: kpi.completed !== undefined ? kpi.completed : false
+                    text: kpi.text || '',
+                    deadline: kpi.deadline || getFutureDateString(10),
+                    completed: kpi.completed === true,
+                    assignee: normalizeAssignee(kpi.assignee)
                 };
             }
-            
+
             // 文字列の場合はオブジェクトに変換
             return {
                 text: kpi,
                 deadline: getFutureDateString(10),
-                completed: false
+                completed: false,
+                assignee: ASSIGNEES.BOTH
             };
         });
     }
@@ -621,22 +746,28 @@ document.addEventListener('DOMContentLoaded', function() {
             const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
             const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : null;
             const isCompleted = typeof kpi === 'object' && kpi.completed;
-            
+            const assigneeBadge = getAssigneeBadge(kpi.assignee);
+            const assigneeTitle = getAssigneeTitle(kpi.assignee);
+
             let deadlineHTML = '';
             if (kpiDeadline) {
                 const timeRemaining = getTimeRemaining(kpiDeadline);
                 deadlineHTML = `<div class="detail-item-deadline">${timeRemaining}</div>`;
             }
-            
+
             // チェックボックスを追加
             const checkboxHTML = `
                 <div class="kpi-checkbox-wrapper">
                     <input type="checkbox" class="kpi-checkbox" data-index="${index}" ${isCompleted ? 'checked' : ''}>
                 </div>
             `;
-            
+
             kpiItem.innerHTML = `
-                <div class="detail-item-content ${isCompleted ? 'completed-kpi' : ''}">${kpiText}</div>
+                <div class="detail-item-content ${isCompleted ? 'completed-kpi' : ''}">
+                    <span class="detail-assignee-badge">${assigneeBadge}</span>
+                    <span class="detail-assignee-text">${assigneeTitle}</span>
+                    <span class="detail-item-text">${kpiText}</span>
+                </div>
                 ${deadlineHTML}
                 ${checkboxHTML}
                 <div class="detail-item-actions">
@@ -717,9 +848,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const taskItem = document.createElement('div');
                 taskItem.className = 'detail-list-item';
                 taskItem.dataset.index = index;
-                
+                taskItem.dataset.assignee = normalizeAssignee(task.assignee);
+
+                const taskText = typeof task === 'object' ? task.text : task;
+                const assigneeBadge = getAssigneeBadge(task.assignee);
+                const assigneeTitle = getAssigneeTitle(task.assignee);
+
                 taskItem.innerHTML = `
-                    <div class="detail-item-content">${task}</div>
+                    <div class="detail-item-content">
+                        <span class="detail-assignee-badge">${assigneeBadge}</span>
+                        <span class="detail-assignee-text">${assigneeTitle}</span>
+                        <span class="detail-item-text">${taskText}</span>
+                    </div>
                     <div class="detail-item-actions">
                         <button class="detail-item-edit-btn" data-type="task" data-index="${index}">
                             <i class="fas fa-edit"></i>
@@ -805,9 +945,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeTaskFromToday(activityId, taskToRemove) {
         const today = getCurrentDate();
         if (state.dailyTasks[today]) {
+            const removeName = typeof taskToRemove === 'object' ? (taskToRemove.text || taskToRemove.name || '') : taskToRemove;
+            const removeAssignee = typeof taskToRemove === 'object'
+                ? normalizeAssignee(taskToRemove.assignee)
+                : ASSIGNEES.BOTH;
+
             state.dailyTasks[today] = state.dailyTasks[today].filter(task => {
-                if (task.activityId === activityId && task.name === taskToRemove && task.isRecurring) {
-                    return false; // 削除するタスクと一致する場合は除外
+                if (task.activityId === activityId && task.isRecurring) {
+                    const taskName = task.name || task.text || '';
+                    const taskAssignee = normalizeAssignee(task.assignee);
+                    if (taskName === removeName && taskAssignee === removeAssignee) {
+                        return false;
+                    }
                 }
                 return true;
             });
@@ -831,7 +980,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderKpiList() {
         updateCurrentDate();
         updateLastUpdated();
-        
+        normalizeActivities();
+
         // KPIの配列を作成
         const allKpis = [];
         
@@ -851,7 +1001,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             activityName: activity.name,
                             text: kpi.text,
                             deadline: kpi.deadline,
-                            completed: kpi.completed
+                            completed: kpi.completed,
+                            assignee: kpi.assignee
                         });
                     }
                 });
@@ -907,26 +1058,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // KPI一覧コンテナを取得
         const kpiContainer = document.getElementById('kpi-list-container');
         kpiContainer.innerHTML = '';
-        
-        // グリッドコンテナを作成
-        const gridContainer = document.createElement('div');
-        gridContainer.className = 'kpi-grid';
-        kpiContainer.appendChild(gridContainer);
-        
-        // KPIが無い場合のメッセージ
-        if (allKpis.length === 0) {
-            const emptyMessage = document.createElement('div');
-            emptyMessage.className = 'empty-list-message';
-            emptyMessage.textContent = 'KPIはありません';
-            gridContainer.appendChild(emptyMessage);
-        } else {
-            // KPIカードを作成
-            allKpis.forEach(kpi => {
-                const kpiCard = createKpiCard(kpi);
-                gridContainer.appendChild(kpiCard);
-            });
-        }
-        
+
+        const assigneeOrder = [ASSIGNEES.YU, ASSIGNEES.SAKI, ASSIGNEES.BOTH];
+
+        assigneeOrder.forEach(assigneeKey => {
+            const section = document.createElement('div');
+            section.className = 'kpi-assignee-section';
+            section.innerHTML = `
+                <h3 class="assignee-title">${ASSIGNEE_DISPLAY[assigneeKey].title}</h3>
+            `;
+
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'kpi-grid';
+            section.appendChild(gridContainer);
+
+            const assigneeKpis = allKpis.filter(kpi => normalizeAssignee(kpi.assignee) === assigneeKey);
+
+            if (assigneeKpis.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'empty-list-message';
+                emptyMessage.textContent = '該当するKPIはありません';
+                gridContainer.appendChild(emptyMessage);
+            } else {
+                assigneeKpis.forEach(kpi => {
+                    const kpiCard = createKpiCard(kpi);
+                    gridContainer.appendChild(kpiCard);
+                });
+            }
+
+            kpiContainer.appendChild(section);
+        });
+
         // フィルターボタンのイベントリスナーを設定
         const filterButtons = document.querySelectorAll('.filter-btn');
         filterButtons.forEach(button => {
@@ -960,7 +1122,8 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = `kpi-card ${kpi.completed ? 'kpi-completed' : ''}`;
         card.dataset.id = kpi.id;
         card.dataset.activityId = kpi.activityId;
-        
+        card.dataset.assignee = normalizeAssignee(kpi.assignee);
+
         // 残り日数を計算
         const daysRemaining = calculateDaysRemaining(kpi.deadline);
         let deadlineClass = '';
@@ -990,13 +1153,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const deadlineDate = new Date(kpi.deadline);
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         const formattedDate = deadlineDate.toLocaleDateString('ja-JP', options);
-        
+
+        const assigneeBadge = getAssigneeBadge(kpi.assignee);
+        const assigneeTitle = getAssigneeTitle(kpi.assignee);
+
         card.innerHTML = `
             <div class="kpi-card-content">
                 <div class="kpi-checkbox-container">
                     <input type="checkbox" class="kpi-checkbox" ${kpi.completed ? 'checked' : ''}>
                 </div>
                 <div class="kpi-info">
+                    <div class="kpi-header">
+                        <span class="kpi-assignee-badge">${assigneeBadge}</span>
+                        <span class="kpi-assignee-text">${assigneeTitle}</span>
+                    </div>
                     <div class="kpi-text ${kpi.completed ? 'completed-text' : ''}">${kpi.text}</div>
                     <div class="kpi-activity">${kpi.activityName}</div>
                 </div>
@@ -1243,15 +1413,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderDailyTasks() {
         updateCurrentDate();
         updateLastUpdated();
-        
+        normalizeActivities();
+
         const today = getCurrentDate();
         const tasksContainer = document.getElementById('daily-tasks-container');
         tasksContainer.innerHTML = '';
-        
+
         // 今日のタスクが無い場合は新しく作成
         if (!state.dailyTasks[today]) {
             state.dailyTasks[today] = [];
-            
+
             // 各活動の毎日のタスクをコピー（タスクが存在する場合のみ、完了していない事業のみ）
             state.activities.forEach(activity => {
                 if (activity.dailyTasks && activity.dailyTasks.length > 0 && !activity.completed) {
@@ -1260,15 +1431,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             id: generateId(),
                             activityId: activity.id,
                             activityName: activity.name,
-                            name: task,
+                            name: task.text,
                             completed: false,
-                            isRecurring: true
+                            isRecurring: true,
+                            assignee: task.assignee
                         });
                     });
                 }
             });
-            
-                    saveDataToFirestore();
+
+            saveDataToFirestore();
         }
         
         // 完了した事業のタスクを除外する
@@ -1292,7 +1464,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const temporaryTasks = state.dailyTasks[today].filter(task => !task.isRecurring);
         
         // 各グループをソート (活動名でソート)
-        recurringTasks.sort((a, b) => a.activityName.localeCompare(b.activityName));
+        recurringTasks.sort((a, b) => (a.activityName || '').localeCompare(b.activityName || ''));
         
         // タスク追加セクションの表示
         const addTaskSection = document.createElement('div');
@@ -1301,57 +1473,45 @@ document.addEventListener('DOMContentLoaded', function() {
             <h3 class="daily-task-section-title">今日だけのタスクを追加</h3>
             <div class="task-add-form">
                 <input type="text" id="new-temporary-task" placeholder="新しいタスクを入力..." class="task-add-input">
+                <select id="new-temporary-task-assignee" class="task-assignee-select assignee-select">
+                    ${getAssigneeOptionsHTML(ASSIGNEES.BOTH)}
+                </select>
                 <button id="add-temporary-task-btn" class="task-add-btn">
                     <i class="fas fa-plus"></i> 追加
                 </button>
             </div>
         `;
         tasksContainer.appendChild(addTaskSection);
-        
-        // 今日だけのタスクを表示
-        if (temporaryTasks.length > 0) {
-            const temporarySection = document.createElement('div');
-            temporarySection.className = 'daily-task-section temporary-tasks';
-            temporarySection.innerHTML = `
-                <h3 class="daily-task-section-title">今日だけのタスク</h3>
-                <div class="daily-task-list temporary-task-list"></div>
-            `;
-            tasksContainer.appendChild(temporarySection);
-            
-            const temporaryList = temporarySection.querySelector('.temporary-task-list');
-            renderTaskList(temporaryList, temporaryTasks);
-        }
-        
-        // 区切り線を追加
+
+        const temporarySection = document.createElement('div');
+        temporarySection.className = 'daily-task-section temporary-tasks';
+        temporarySection.innerHTML = `
+            <h3 class="daily-task-section-title">今日だけのタスク</h3>
+        `;
+        const temporaryWrapper = document.createElement('div');
+        temporaryWrapper.className = 'assignee-sections';
+        temporarySection.appendChild(temporaryWrapper);
+        renderTaskAssigneeSections(temporaryWrapper, temporaryTasks, 'temporary');
+        tasksContainer.appendChild(temporarySection);
+
         const divider = document.createElement('div');
         divider.className = 'task-section-divider';
         tasksContainer.appendChild(divider);
-        
-        // 毎日のタスクを表示
-        if (recurringTasks.length > 0) {
-            const recurringSection = document.createElement('div');
-            recurringSection.className = 'daily-task-section recurring-tasks';
-            recurringSection.innerHTML = `
-                <h3 class="daily-task-section-title">事業の毎日のタスク</h3>
-                <div class="daily-task-list recurring-task-list"></div>
-            `;
-            tasksContainer.appendChild(recurringSection);
-            
-            const recurringList = recurringSection.querySelector('.recurring-task-list');
-            renderTaskList(recurringList, recurringTasks);
-        } else {
-            const emptySection = document.createElement('div');
-            emptySection.className = 'daily-task-section';
-            emptySection.innerHTML = `
-                <h3 class="daily-task-section-title">事業の毎日のタスク</h3>
-                <div class="empty-list-message">毎日のタスクはありません</div>
-            `;
-            tasksContainer.appendChild(emptySection);
-        }
-        
+
+        const recurringSection = document.createElement('div');
+        recurringSection.className = 'daily-task-section recurring-tasks';
+        recurringSection.innerHTML = `
+            <h3 class="daily-task-section-title">事業の毎日のタスク</h3>
+        `;
+        const recurringWrapper = document.createElement('div');
+        recurringWrapper.className = 'assignee-sections';
+        recurringSection.appendChild(recurringWrapper);
+        renderTaskAssigneeSections(recurringWrapper, recurringTasks, 'recurring');
+        tasksContainer.appendChild(recurringSection);
+
         // 一時的なタスク追加ボタンのイベントリスナーを設定
         document.getElementById('add-temporary-task-btn').addEventListener('click', addTemporaryTask);
-        
+
         // Enter キーでも追加できるようにする
         document.getElementById('new-temporary-task').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -1381,27 +1541,34 @@ document.addEventListener('DOMContentLoaded', function() {
             const taskItem = document.createElement('div');
             taskItem.className = `task-item ${task.completed ? 'task-completed' : ''}`;
             taskItem.dataset.id = task.id;
-            
+            taskItem.dataset.assignee = normalizeAssignee(task.assignee);
+
+            const taskName = task.name || task.text || '';
+            const assigneeBadge = getAssigneeBadge(task.assignee);
+
             let activityInfo = '';
             if (task.activityName) {
                 activityInfo = `<div class="task-activity">${task.activityName}</div>`;
             }
-            
+
             taskItem.innerHTML = `
                 <div class="task-checkbox-wrapper">
                     <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
                 </div>
                 <div class="task-content">
-                    <div class="task-name">${task.name}</div>
+                    <div class="task-header">
+                        <span class="task-assignee-badge">${assigneeBadge}</span>
+                        <div class="task-name">${taskName}</div>
+                    </div>
                     ${activityInfo}
                 </div>
                 <button class="task-delete-btn" title="削除">
                     <i class="fas fa-trash"></i>
                 </button>
             `;
-            
+
             container.appendChild(taskItem);
-            
+
             // チェックボックスのイベントリスナーを設定
             const checkbox = taskItem.querySelector('.task-checkbox');
             checkbox.addEventListener('change', () => {
@@ -1410,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateTaskCompletion();
                     saveDataToFirestore();
             });
-            
+
             // 削除ボタンのイベントリスナーを設定
             const deleteBtn = taskItem.querySelector('.task-delete-btn');
             deleteBtn.addEventListener('click', () => {
@@ -1420,31 +1587,62 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    function renderTaskAssigneeSections(wrapper, tasks, sectionClass) {
+        wrapper.innerHTML = '';
+        const order = [ASSIGNEES.YU, ASSIGNEES.SAKI, ASSIGNEES.BOTH];
+
+        order.forEach(assigneeKey => {
+            const section = document.createElement('div');
+            section.className = `assignee-section ${sectionClass}-assignee-section`;
+            section.innerHTML = `
+                <h4 class="assignee-title">${ASSIGNEE_DISPLAY[assigneeKey].title}</h4>
+                <div class="daily-task-list"></div>
+            `;
+
+            const list = section.querySelector('.daily-task-list');
+            const assigneeTasks = tasks.filter(task => normalizeAssignee(task.assignee) === assigneeKey);
+
+            if (assigneeTasks.length > 0) {
+                renderTaskList(list, assigneeTasks);
+            } else {
+                list.innerHTML = '<div class="empty-task-message">タスクはありません</div>';
+            }
+
+            wrapper.appendChild(section);
+        });
+    }
     
     // 一時的なタスクを追加する関数
     function addTemporaryTask() {
         const taskInput = document.getElementById('new-temporary-task');
         const taskText = taskInput.value.trim();
-        
+        const assigneeSelect = document.getElementById('new-temporary-task-assignee');
+        const assignee = assigneeSelect ? normalizeAssignee(assigneeSelect.value) : ASSIGNEES.BOTH;
+
         if (taskText) {
             const today = getCurrentDate();
             const newTask = {
                 id: generateId(),
                 name: taskText,
                 completed: false,
-                isRecurring: false
+                isRecurring: false,
+                assignee
             };
-            
+
             if (!state.dailyTasks[today]) {
                 state.dailyTasks[today] = [];
             }
-            
+
             state.dailyTasks[today].push(newTask);
                     saveDataToFirestore();
-            
+
             // 入力フィールドをクリア
             taskInput.value = '';
-            
+            if (assigneeSelect) {
+                assigneeSelect.value = ASSIGNEES.BOTH;
+            }
+
             // 表示を更新
             renderDailyTasks();
         }
@@ -1513,7 +1711,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // プロンプトダイアログでKPIのテキストを取得
                 const kpiText = prompt('新しいKPIを入力してください:');
                 if (!kpiText || kpiText.trim() === '') return;
-                
+
+                const kpiAssignee = promptForAssignee();
+                if (kpiAssignee === null) return;
+
                 // 日付選択UI表示（モーダルやプロンプトの代わりに日付入力ダイアログを使用）
                 const dateInput = document.createElement('input');
                 dateInput.type = 'date';
@@ -1528,9 +1729,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 dateInput.addEventListener('change', function() {
                     const selectedDate = this.value;
                     document.body.removeChild(this);
-                    
+
                     if (selectedDate && isValidDate(selectedDate)) {
-                        newItem = { text: kpiText, deadline: selectedDate, completed: false };
+                        newItem = { text: kpiText, deadline: selectedDate, completed: false, assignee: kpiAssignee };
                         activity.kpis.push(newItem);
                     saveDataToFirestore();
                         renderActivityDetail();
@@ -1556,28 +1757,32 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'task':
                 const taskText = prompt('新しいタスクを入力してください:');
                 if (!taskText || taskText.trim() === '') return;
-                
+
+                const taskAssignee = promptForAssignee();
+                if (taskAssignee === null) return;
+
                 // 毎日のタスク配列が存在しない場合は作成
                 if (!activity.dailyTasks) {
                     activity.dailyTasks = [];
                 }
-                
-                activity.dailyTasks.push(taskText);
-                
+
+                activity.dailyTasks.push({ text: taskText, assignee: taskAssignee });
+
                 // 今日のタスクにも追加
                 if (taskText && !activity.completed) {
                     const today = getCurrentDate();
                     if (!state.dailyTasks[today]) {
                         state.dailyTasks[today] = [];
                     }
-                    
+
                     state.dailyTasks[today].push({
                         id: generateId(),
                         activityId: activity.id,
                         activityName: activity.name,
                         name: taskText,
                         completed: false,
-                        isRecurring: true
+                        isRecurring: true,
+                        assignee: taskAssignee
                     });
                 }
                 break;
@@ -1620,15 +1825,19 @@ document.addEventListener('DOMContentLoaded', function() {
         activity.kpis.forEach((kpi, index) => {
             const inputGroup = document.createElement('div');
             inputGroup.className = 'input-group kpi-input-group';
-            
+
             // KPIがオブジェクトかどうかを確認
             const kpiText = typeof kpi === 'object' ? kpi.text : kpi;
             const kpiDeadline = typeof kpi === 'object' ? kpi.deadline : getFutureDateString(10);
-            
+            const kpiAssignee = typeof kpi === 'object' ? normalizeAssignee(kpi.assignee) : ASSIGNEES.BOTH;
+
             inputGroup.innerHTML = `
                 <input type="text" class="kpi-input" placeholder="KPI" value="${kpiText}" required>
                 <input type="date" class="kpi-date-input" value="${kpiDeadline}" required>
-                ${index === 0 ? 
+                <select class="kpi-assignee-select assignee-select">
+                    ${getAssigneeOptionsHTML(kpiAssignee)}
+                </select>
+                ${index === 0 ?
                     `<button type="button" class="add-item-btn kpi-add-btn">
                         <i class="fas fa-plus"></i>
                     </button>` :
@@ -1637,7 +1846,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>`
                 }
             `;
-            
+
             kpiInputs.appendChild(inputGroup);
         });
         
@@ -1671,11 +1880,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activity.dailyTasks && activity.dailyTasks.length > 0) {
             activity.dailyTasks.forEach((task, index) => {
                 const inputGroup = document.createElement('div');
-                inputGroup.className = 'input-group';
-                
+                inputGroup.className = 'input-group task-input-group';
+
+                const taskText = typeof task === 'object' ? task.text : task;
+                const taskAssignee = typeof task === 'object' ? normalizeAssignee(task.assignee) : ASSIGNEES.BOTH;
+
                 inputGroup.innerHTML = `
-                    <input type="text" class="task-input" placeholder="タスク" value="${task}">
-                    ${index === 0 ? 
+                    <input type="text" class="task-input" placeholder="タスク" value="${taskText}">
+                    <select class="task-assignee-select assignee-select">
+                        ${getAssigneeOptionsHTML(taskAssignee)}
+                    </select>
+                    ${index === 0 ?
                         `<button type="button" class="add-item-btn task-add-btn">
                             <i class="fas fa-plus"></i>
                         </button>` :
@@ -1684,21 +1899,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>`
                     }
                 `;
-                
+
                 taskInputs.appendChild(inputGroup);
             });
         } else {
             // タスクがない場合は空の入力フィールドを表示
             const inputGroup = document.createElement('div');
-            inputGroup.className = 'input-group';
-            
+            inputGroup.className = 'input-group task-input-group';
+
             inputGroup.innerHTML = `
                 <input type="text" class="task-input" placeholder="タスク">
+                <select class="task-assignee-select assignee-select">
+                    ${getAssigneeOptionsHTML(ASSIGNEES.BOTH)}
+                </select>
                 <button type="button" class="add-item-btn task-add-btn">
                     <i class="fas fa-plus"></i>
                 </button>
             `;
-            
+
             taskInputs.appendChild(inputGroup);
         }
         
@@ -1756,7 +1974,21 @@ document.addEventListener('DOMContentLoaded', function() {
             inputGroup.innerHTML = `
                 <input type="text" class="kpi-input" placeholder="KPI" required>
                 <input type="date" class="kpi-date-input" value="${getFutureDateString(10)}" required>
+                <select class="kpi-assignee-select assignee-select">
+                    ${getAssigneeOptionsHTML(ASSIGNEES.BOTH)}
+                </select>
                 <button type="button" class="remove-item-btn kpi-remove-btn">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+        } else if (type === 'task') {
+            inputGroup.className = 'input-group task-input-group';
+            inputGroup.innerHTML = `
+                <input type="text" class="task-input" placeholder="タスク">
+                <select class="task-assignee-select assignee-select">
+                    ${getAssigneeOptionsHTML(ASSIGNEES.BOTH)}
+                </select>
+                <button type="button" class="remove-item-btn task-remove-btn">
                     <i class="fas fa-minus"></i>
                 </button>
             `;
@@ -1799,19 +2031,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 return {
                     text: kpi,
                     deadline: getFutureDateString(10),
-                    completed: false
+                    completed: false,
+                    assignee: ASSIGNEES.BOTH
                 };
             } else if (typeof kpi === 'object' && kpi !== null) {
                 return {
                     text: kpi.text || '',
                     deadline: kpi.deadline || getFutureDateString(10),
-                    completed: kpi.completed === true
+                    completed: kpi.completed === true,
+                    assignee: normalizeAssignee(kpi.assignee)
                 };
             } else {
                 return {
                     text: '',
                     deadline: getFutureDateString(10),
-                    completed: false
+                    completed: false,
+                    assignee: ASSIGNEES.BOTH
                 };
             }
         });
@@ -1832,12 +2067,15 @@ document.addEventListener('DOMContentLoaded', function() {
         kpiGroups.forEach(group => {
             const kpiText = group.querySelector('.kpi-input').value.trim();
             const kpiDate = group.querySelector('.kpi-date-input').value;
-            
+            const kpiAssigneeSelect = group.querySelector('.kpi-assignee-select');
+            const kpiAssignee = kpiAssigneeSelect ? normalizeAssignee(kpiAssigneeSelect.value) : ASSIGNEES.BOTH;
+
             if (kpiText && kpiDate) {
                 kpis.push({
                     text: kpiText,
                     deadline: kpiDate,
-                    completed: false // 新規追加時は未完了
+                    completed: false, // 新規追加時は未完了
+                    assignee: kpiAssignee
                 });
             }
         });
@@ -1852,9 +2090,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // タスクを取得
         const dailyTasks = [];
-        document.querySelectorAll('.task-input').forEach(input => {
-            if (input.value.trim()) {
-                dailyTasks.push(input.value.trim());
+        document.querySelectorAll('.task-input-group').forEach(group => {
+            const taskInput = group.querySelector('.task-input');
+            const taskAssigneeSelect = group.querySelector('.task-assignee-select');
+            const taskText = taskInput ? taskInput.value.trim() : '';
+            const taskAssignee = taskAssigneeSelect ? normalizeAssignee(taskAssigneeSelect.value) : ASSIGNEES.BOTH;
+
+            if (taskText) {
+                dailyTasks.push({ text: taskText, assignee: taskAssignee });
             }
         });
         
@@ -1867,10 +2110,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 既存のKPIのcompleted状態を保持
                 const mergedKpis = kpis.map(newKpi => {
                     // 既存のKPIで同じテキストを持つものを探す
-                    const existingKpi = oldActivity.kpis.find(k => 
+                    const existingKpi = oldActivity.kpis.find(k =>
                         typeof k === 'object' && k.text === newKpi.text
                     );
-                    
+
                     // 既存のKPIが見つかった場合はcompleted状態を引き継ぐ
                     if (existingKpi) {
                         return {
@@ -1878,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             completed: existingKpi.completed || false
                         };
                     }
-                    
+
                     return newKpi;
                 });
                 
@@ -1901,7 +2144,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     notes: oldActivity.notes || '',
                     kpis: mergedKpis,
                     phases,
-                    dailyTasks: dailyTasks || [] // タスクがなければ空の配列に
+                    dailyTasks: dailyTasks.map(task => ({
+                        text: task.text,
+                        assignee: task.assignee
+                    }))
                 };
                 
                 state.activities[activityIndex] = updatedActivity;
@@ -1910,10 +2156,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const today = getCurrentDate();
                 if (state.dailyTasks[today]) {
                     // 古いタスクを削除（定期的なタスクのみ）
-                    state.dailyTasks[today] = state.dailyTasks[today].filter(task => 
+                    state.dailyTasks[today] = state.dailyTasks[today].filter(task =>
                         task.activityId !== oldActivity.id || !task.isRecurring
                     );
-                    
+
                     // 新しいタスクを追加（定期的なタスク）
                     if (!updatedActivity.completed) {
                         dailyTasks.forEach(task => {
@@ -1921,9 +2167,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 id: generateId(),
                                 activityId: oldActivity.id,
                                 activityName: name,
-                                name: task,
+                                name: task.text,
                                 completed: false,
-                                isRecurring: true
+                                isRecurring: true,
+                                assignee: task.assignee
                             });
                         });
                     }
@@ -1951,26 +2198,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 notes: '',
                 kpis,
                 phases,
-                dailyTasks: dailyTasks || [] // 毎日のタスクが無い場合は空配列に
+                dailyTasks: dailyTasks.map(task => ({
+                    text: task.text,
+                    assignee: task.assignee
+                }))
             };
-            
+
             state.activities.push(newActivity);
-            
+
             // 毎日のタスクを今日のタスクに追加（完了していない場合のみ）
             if (dailyTasks && dailyTasks.length > 0 && !newActivity.completed) {
                 const today = getCurrentDate();
                 if (!state.dailyTasks[today]) {
                     state.dailyTasks[today] = [];
                 }
-                
+
                 dailyTasks.forEach(task => {
                     state.dailyTasks[today].push({
                         id: generateId(),
                         activityId: newActivity.id,
                         activityName: name,
-                        name: task,
+                        name: task.text,
                         completed: false,
-                        isRecurring: true
+                        isRecurring: true,
+                        assignee: task.assignee
                     });
                 });
             }
