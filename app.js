@@ -903,7 +903,26 @@ document.addEventListener('DOMContentLoaded', function() {
             state.editMode = true;
             renderPage('activity-form');
         });
-        
+
+        const deleteButton = document.getElementById('delete-activity-btn');
+        if (deleteButton) {
+            deleteButton.addEventListener('click', async () => {
+                const confirmed = confirm(`事業「${activity.name}」を削除しますか？\n関連するKPI・フェーズ・毎日のタスクも全て削除されます。`);
+                if (!confirmed) {
+                    return;
+                }
+
+                const deleted = deleteActivity(activity.id);
+                if (deleted) {
+                    state.currentActivity = null;
+                    state.editMode = false;
+                    await saveDataToFirestore();
+                    alert('事業を削除しました。');
+                    renderPage('home');
+                }
+            });
+        }
+
         // KPI、フェーズ、タスクの追加ボタンのイベントリスナーを設定
         document.querySelector('.kpi-add-detail-btn').addEventListener('click', () => {
             addItemInDetail('kpi');
@@ -941,6 +960,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             });
         }
+    }
+
+    function removeActivityFromAllDailyTasks(activityId) {
+        if (!state.dailyTasks || typeof state.dailyTasks !== 'object') return;
+
+        Object.keys(state.dailyTasks).forEach(date => {
+            const tasks = state.dailyTasks[date];
+            if (!Array.isArray(tasks)) return;
+
+            const filteredTasks = tasks.filter(task => task.activityId !== activityId);
+            if (filteredTasks.length !== tasks.length) {
+                if (filteredTasks.length > 0) {
+                    state.dailyTasks[date] = filteredTasks;
+                } else {
+                    delete state.dailyTasks[date];
+                }
+            }
+        });
+    }
+
+    function deleteActivity(activityId) {
+        const activityIndex = state.activities.findIndex(activity => activity.id === activityId);
+        if (activityIndex === -1) {
+            return false;
+        }
+
+        state.activities.splice(activityIndex, 1);
+        removeActivityFromAllDailyTasks(activityId);
+        return true;
     }
 
     // 進捗表示を更新する関数

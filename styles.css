@@ -1284,6 +1284,14 @@ body {
     background-color: #219653;
 }
 
+.delete-btn {
+    background-color: #e74c3c;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
+
 .complete-btn {
     background-color: #2ecc71;
 }
