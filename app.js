@@ -348,14 +348,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 現在の日付を取得
     function getCurrentDate() {
-        return new Date().toISOString().split('T')[0];
+        const formatter = new Intl.DateTimeFormat('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+
+        const parts = formatter.formatToParts(new Date());
+        const year = parts.find(part => part.type === 'year')?.value || '0000';
+        const month = parts.find(part => part.type === 'month')?.value || '00';
+        const day = parts.find(part => part.type === 'day')?.value || '00';
+
+        return `${year}-${month}-${day}`;
     }
 
     // 現在の日付の表示を更新
     function updateCurrentDate() {
-        const today = new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-        const formattedDate = today.toLocaleDateString('ja-JP', options);
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'Asia/Tokyo' };
+        const formattedDate = new Intl.DateTimeFormat('ja-JP', options).format(new Date());
 
         // 今日のタスクページの日付を更新
         const currentDateElement = document.getElementById('current-date');
@@ -367,12 +378,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // 最終更新日時を更新
     function updateLastUpdated() {
         const now = new Date();
-        const options = { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Asia/Tokyo'
         };
         const formattedDate = now.toLocaleDateString('ja-JP', options);
 
