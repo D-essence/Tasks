@@ -110,6 +110,12 @@ document.addEventListener('DOMContentLoaded', function() {
         state.dailyTasks = normalizeDailyTasksObject(state.dailyTasks || {});
     }
 
+    function getRecurringTaskKey(activityId, taskName, assignee) {
+        const normalizedName = (taskName || '').trim();
+        const normalizedAssignee = normalizeAssignee(assignee);
+        return `${activityId || ''}::${normalizedAssignee}::${normalizedName}`;
+    }
+
     function getDefaultStatusFromTimeline(activity) {
         if (!activity) return 'short-term';
         const timeline = activity.timeline;
@@ -1612,53 +1618,108 @@ document.addEventListener('DOMContentLoaded', function() {
         const tasksContainer = document.getElementById('daily-tasks-container');
         tasksContainer.innerHTML = '';
 
-        // 今日のタスクが無い場合は新しく作成
+        let tasksChanged = false;
+
         if (!state.dailyTasks[today]) {
             state.dailyTasks[today] = [];
+            tasksChanged = true;
+        }
 
-            // 各活動の毎日のタスクをコピー（タスクが存在する場合のみ、完了していない事業のみ）
-            state.activities.forEach(activity => {
-                if (activity.dailyTasks && activity.dailyTasks.length > 0 && !activity.completed) {
-                    activity.dailyTasks.forEach(task => {
-                        state.dailyTasks[today].push({
-                            id: generateId(),
-                            activityId: activity.id,
-                            activityName: activity.name,
-                            name: task.text,
-                            completed: false,
-                            isRecurring: true,
-                            assignee: task.assignee
-                        });
+        const todayTasks = state.dailyTasks[today];
+        const temporaryTasks = todayTasks.filter(task => !task.isRecurring);
+        const activeActivities = state.activities.filter(activity => !activity.completed);
+
+        const requiredRecurringMap = new Map();
+        activeActivities.forEach(activity => {
+            (activity.dailyTasks || []).forEach(task => {
+                const taskName = task.text || task.name || '';
+                if (!taskName) return;
+                const key = getRecurringTaskKey(activity.id, taskName, task.assignee);
+                if (!requiredRecurringMap.has(key)) {
+                    requiredRecurringMap.set(key, {
+                        activityId: activity.id,
+                        activityName: activity.name,
+                        taskName,
+                        assignee: normalizeAssignee(task.assignee)
                     });
                 }
             });
+        });
 
+        const updatedRecurringTasks = [];
+        const matchedKeys = new Set();
+
+        todayTasks.forEach(task => {
+            if (!task.isRecurring) {
+                return;
+            }
+
+            const taskName = task.name || task.text || '';
+            const key = getRecurringTaskKey(task.activityId, taskName, task.assignee);
+
+            if (requiredRecurringMap.has(key) && !matchedKeys.has(key)) {
+                const baseInfo = requiredRecurringMap.get(key);
+
+                if (task.activityId !== baseInfo.activityId) {
+                    task.activityId = baseInfo.activityId;
+                    tasksChanged = true;
+                }
+                if (task.activityName !== baseInfo.activityName) {
+                    task.activityName = baseInfo.activityName;
+                    tasksChanged = true;
+                }
+                if ((task.name || '') !== baseInfo.taskName) {
+                    task.name = baseInfo.taskName;
+                    tasksChanged = true;
+                }
+                const normalizedAssignee = baseInfo.assignee;
+                if (normalizeAssignee(task.assignee) !== normalizedAssignee) {
+                    task.assignee = normalizedAssignee;
+                    tasksChanged = true;
+                }
+
+                updatedRecurringTasks.push(task);
+                matchedKeys.add(key);
+            } else {
+                tasksChanged = true;
+            }
+        });
+
+        requiredRecurringMap.forEach((info, key) => {
+            if (matchedKeys.has(key)) return;
+
+            updatedRecurringTasks.push({
+                id: generateId(),
+                activityId: info.activityId,
+                activityName: info.activityName,
+                name: info.taskName,
+                completed: false,
+                isRecurring: true,
+                assignee: info.assignee
+            });
+            tasksChanged = true;
+        });
+
+        const newTodayTasks = [...temporaryTasks, ...updatedRecurringTasks];
+        const arraysDiffer = newTodayTasks.length !== todayTasks.length ||
+            newTodayTasks.some((task, index) => task !== todayTasks[index]);
+
+        if (arraysDiffer) {
+            state.dailyTasks[today] = newTodayTasks;
+            tasksChanged = true;
+        }
+
+        if (tasksChanged) {
             saveDataToFirestore();
         }
-        
-        // 完了した事業のタスクを除外する
-        const completedActivityIds = state.activities
-            .filter(a => a.completed)
-            .map(a => a.id);
 
-        const todayTasks = state.dailyTasks[today];
-        const filteredTasks = todayTasks.filter(task =>
-            !completedActivityIds.includes(task.activityId) || !task.isRecurring
-        );
-        const tasksRemoved = filteredTasks.length !== todayTasks.length;
-        state.dailyTasks[today] = filteredTasks;
+        const finalTodayTasks = state.dailyTasks[today];
+        const recurringTasks = finalTodayTasks.filter(task => task.isRecurring);
+        const finalTemporaryTasks = finalTodayTasks.filter(task => !task.isRecurring);
 
-        if (tasksRemoved) {
-            saveDataToFirestore();
-        }
-        
-        // タスクをグループ分け
-        const recurringTasks = state.dailyTasks[today].filter(task => task.isRecurring);
-        const temporaryTasks = state.dailyTasks[today].filter(task => !task.isRecurring);
-        
         // 各グループをソート (活動名でソート)
         recurringTasks.sort((a, b) => (a.activityName || '').localeCompare(b.activityName || ''));
-        
+
         // タスク追加セクションの表示
         const addTaskSection = document.createElement('div');
         addTaskSection.className = 'daily-task-add-section';
@@ -1684,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const temporaryWrapper = document.createElement('div');
         temporaryWrapper.className = 'assignee-sections';
         temporarySection.appendChild(temporaryWrapper);
-        renderTaskAssigneeSections(temporaryWrapper, temporaryTasks, 'temporary');
+        renderTaskAssigneeSections(temporaryWrapper, finalTemporaryTasks, 'temporary');
         tasksContainer.appendChild(temporarySection);
 
         const divider = document.createElement('div');
