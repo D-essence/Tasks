@@ -103,10 +103,80 @@ document.addEventListener('DOMContentLoaded', function() {
             const updated = { ...activity };
             updated.kpis = convertKPIs(updated.kpis || []);
             updated.dailyTasks = convertActivityDailyTasks(updated.dailyTasks || []);
+            initializeActivityStatus(updated);
             return updated;
         });
 
         state.dailyTasks = normalizeDailyTasksObject(state.dailyTasks || {});
+    }
+
+    function getDefaultStatusFromTimeline(activity) {
+        if (!activity) return 'short-term';
+        const timeline = activity.timeline;
+        if (timeline === 'long-term' || timeline === 'medium-term') {
+            return 'long-term';
+        }
+        return 'short-term';
+    }
+
+    function initializeActivityStatus(activity) {
+        if (!activity) return;
+
+        if (typeof activity.statusManuallySet !== 'boolean') {
+            activity.statusManuallySet = false;
+        }
+
+        if (!activity.status) {
+            if (activity.completed || activity.progress >= 100) {
+                activity.status = 'completed';
+            } else if (activity.progress >= 20) {
+                activity.status = 'in-progress';
+            } else {
+                activity.status = getDefaultStatusFromTimeline(activity);
+            }
+            activity.statusManuallySet = false;
+        }
+
+        syncStatusWithProgress(activity);
+    }
+
+    function syncStatusWithProgress(activity) {
+        if (!activity) return;
+
+        if (activity.completed || activity.progress >= 100) {
+            activity.completed = true;
+            activity.progress = Math.max(activity.progress || 0, 100);
+            activity.status = 'completed';
+            activity.statusManuallySet = false;
+            return;
+        }
+
+        if (activity.progress >= 20) {
+            if (activity.status !== 'in-progress' || activity.statusManuallySet) {
+                activity.status = 'in-progress';
+                activity.statusManuallySet = false;
+            }
+            return;
+        }
+
+        if (!activity.status) {
+            activity.status = getDefaultStatusFromTimeline(activity);
+            activity.statusManuallySet = false;
+            return;
+        }
+
+        if (!activity.statusManuallySet && (activity.status === 'in-progress' || activity.status === 'completed')) {
+            activity.status = getDefaultStatusFromTimeline(activity);
+            activity.statusManuallySet = false;
+        }
+    }
+
+    function getActivityStatus(activity) {
+        if (!activity) return 'short-term';
+        if (!activity.status) {
+            initializeActivityStatus(activity);
+        }
+        return activity.status;
     }
 
     function promptForAssignee(defaultValue = ASSIGNEES.BOTH) {
@@ -490,14 +560,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderHomeData() {
         updateLastUpdated();
         
-        const inProgressActivities = state.activities.filter(a => a.progress >= 20 && a.progress < 100 && !a.completed);
-        const completedActivities = state.activities.filter(a => a.progress >= 100 || a.completed);
-        
-        // 進行中と完了済みを除いたアクティビティ
-        const shortTermActivities = state.activities.filter(a =>
-            a.timeline === 'short-term' && a.progress < 20 && !a.completed);
-        const longTermActivities = state.activities.filter(a =>
-            (a.timeline === 'long-term' || a.timeline === 'medium-term') && a.progress < 20 && !a.completed);
+        state.activities.forEach(initializeActivityStatus);
+
+        const shortTermActivities = state.activities.filter(a => !a.completed && getActivityStatus(a) === 'short-term');
+        const longTermActivities = state.activities.filter(a => !a.completed && getActivityStatus(a) === 'long-term');
+        const inProgressActivities = state.activities.filter(a => !a.completed && getActivityStatus(a) === 'in-progress');
+        const completedActivities = state.activities.filter(a => a.completed || getActivityStatus(a) === 'completed');
         
         // 事業数のカウントを更新
         document.getElementById('short-term-count').textContent = shortTermActivities.length;
@@ -532,6 +600,7 @@ document.addEventListener('DOMContentLoaded', function() {
             card.className = `activity-card ${cardClass}`;
             card.dataset.id = activity.id;
             card.dataset.timeline = activity.timeline;
+            card.dataset.status = getActivityStatus(activity);
             card.dataset.completed = activity.completed.toString();
             card.draggable = true;
             
@@ -574,83 +643,168 @@ document.addEventListener('DOMContentLoaded', function() {
             e.dataTransfer.setData('application/json', JSON.stringify({
                 id: this.dataset.id,
                 timeline: this.dataset.timeline,
+                status: this.dataset.status,
                 completed: this.dataset.completed
             }));
         });
-        
+
         card.addEventListener('dragend', function() {
             this.classList.remove('dragging');
         });
     }
-    
+
+    function getDragAfterElement(container, y) {
+        const cards = [...container.querySelectorAll('.activity-card:not(.dragging)')];
+
+        return cards.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset, element: child };
+            }
+
+            return closest;
+        }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+    }
+
+    function updateActivityOrderFromDOM() {
+        const containers = [
+            'short-term-cards',
+            'long-term-cards',
+            'in-progress-cards',
+            'completed-cards'
+        ];
+
+        const orderedIds = [];
+        containers.forEach(id => {
+            const column = document.getElementById(id);
+            if (!column) return;
+            column.querySelectorAll('.activity-card').forEach(card => {
+                orderedIds.push(card.dataset.id);
+            });
+        });
+
+        if (orderedIds.length === 0) {
+            return false;
+        }
+
+        const activityMap = new Map(state.activities.map(activity => [activity.id, activity]));
+        const newOrder = orderedIds
+            .map(id => activityMap.get(id))
+            .filter(activity => activity);
+
+        if (newOrder.length === 0) {
+            return false;
+        }
+
+        const remainingActivities = state.activities.filter(activity => !orderedIds.includes(activity.id));
+        const updatedOrder = [...newOrder, ...remainingActivities];
+
+        const changed = updatedOrder.some((activity, index) => activity.id !== state.activities[index]?.id);
+
+        if (changed) {
+            state.activities = updatedOrder;
+        }
+
+        return changed;
+    }
+
     // ドロップゾーンのイベントリスナーを設定する関数
     function setupDropZone(container, zoneClass) {
         container.addEventListener('dragover', function(e) {
             e.preventDefault();
             this.classList.add('drag-over');
+
+            const draggingCard = document.querySelector('.activity-card.dragging');
+            if (!draggingCard) return;
+
+            const afterElement = getDragAfterElement(this, e.clientY);
+            if (!afterElement) {
+                if (draggingCard.parentElement !== this || draggingCard.nextElementSibling) {
+                    this.appendChild(draggingCard);
+                }
+            } else if (afterElement !== draggingCard) {
+                this.insertBefore(draggingCard, afterElement);
+            }
         });
-        
+
         container.addEventListener('dragleave', function() {
             this.classList.remove('drag-over');
         });
-        
+
         container.addEventListener('drop', function(e) {
             e.preventDefault();
             this.classList.remove('drag-over');
-            
+
             try {
-                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                const payload = e.dataTransfer.getData('application/json');
+                if (!payload) return;
+                const data = JSON.parse(payload);
                 const activityId = data.id;
-                const sourceTimeline = data.timeline;
-                const isCompleted = data.completed === 'true';
-                
-                // 活動のタイムラインまたは完了状態を更新
+                const sourceStatus = data.status;
+
                 const activityIndex = state.activities.findIndex(a => a.id === activityId);
                 if (activityIndex === -1) return;
-                
+
                 const activity = state.activities[activityIndex];
-                let needsUpdate = false;
-                
-                // ドロップ先に応じた更新
+                let statusChanged = false;
+
                 switch(zoneClass) {
                     case 'short-term':
                         activity.timeline = 'short-term';
                         if (activity.completed) {
                             activity.completed = false;
-                            needsUpdate = true;
+                        }
+                        if (activity.status !== 'short-term') {
+                            activity.status = 'short-term';
+                            activity.statusManuallySet = true;
+                            statusChanged = true;
                         }
                         break;
                     case 'long-term':
                         activity.timeline = 'long-term';
                         if (activity.completed) {
                             activity.completed = false;
-                            needsUpdate = true;
+                        }
+                        if (activity.status !== 'long-term') {
+                            activity.status = 'long-term';
+                            activity.statusManuallySet = true;
+                            statusChanged = true;
                         }
                         break;
                     case 'in-progress':
-                        if (activity.progress < 20) {
-                            activity.progress = 20;
-                            needsUpdate = true;
-                        }
                         if (activity.completed) {
                             activity.completed = false;
-                            needsUpdate = true;
+                        }
+                        if (activity.status !== 'in-progress') {
+                            activity.status = 'in-progress';
+                            activity.statusManuallySet = true;
+                            statusChanged = true;
                         }
                         break;
                     case 'completed':
                         activity.completed = true;
-                        activity.progress = 100;
-                        needsUpdate = true;
-                        
-                        // 完了した事業のタスクを今日のタスクから削除
+                        activity.progress = Math.max(activity.progress || 0, 100);
+                        activity.status = 'completed';
+                        activity.statusManuallySet = false;
+                        statusChanged = true;
+
                         removeCompletedActivityTasks(activity.id);
                         break;
                 }
-                
-                if (needsUpdate || activity.timeline !== sourceTimeline) {
-                    saveDataToFirestore();
-                    renderPage('home');
+
+                if (zoneClass !== 'completed') {
+                    syncStatusWithProgress(activity);
                 }
+
+                const orderChanged = updateActivityOrderFromDOM();
+
+                if (statusChanged || orderChanged || sourceStatus !== activity.status) {
+                    saveDataToFirestore();
+                }
+
+                renderPage('home');
             } catch (error) {
                 console.error('ドロップ処理中にエラーが発生しました:', error);
             }
@@ -774,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 進捗度を再計算
                 activity.progress = calculateProgressFromKPIs(activity);
-                
+
                 // 100%の場合は完了フラグも設定
                 if (activity.progress >= 100) {
                     activity.completed = true;
@@ -783,7 +937,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     activity.completed = false;
                 }
-                
+
+                syncStatusWithProgress(activity);
+
                 // UI更新
                 const kpiTextElement = kpiItem.querySelector('.detail-item-content');
                 kpiTextElement.classList.toggle('completed-kpi', checkbox.checked);
@@ -1280,7 +1436,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 進捗度を再計算
             activity.progress = calculateProgressFromKPIs(activity);
-            
+
             // 100%の場合は完了フラグも設定
             if (activity.progress >= 100) {
                 activity.completed = true;
@@ -1289,9 +1445,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 activity.completed = false;
             }
-            
+
+            syncStatusWithProgress(activity);
+
             // データを保存
-                    saveDataToFirestore();
+                saveDataToFirestore();
         }
     }
 
@@ -2166,9 +2324,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     dailyTasks: dailyTasks.map(task => ({
                         text: task.text,
                         assignee: task.assignee
-                    }))
+                    })),
+                    status: oldActivity.status,
+                    statusManuallySet: oldActivity.statusManuallySet
                 };
-                
+
+                initializeActivityStatus(updatedActivity);
+
                 state.activities[activityIndex] = updatedActivity;
                 
                 // 今日のタスクも更新
@@ -2220,8 +2382,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 dailyTasks: dailyTasks.map(task => ({
                     text: task.text,
                     assignee: task.assignee
-                }))
+                })),
+                status: null,
+                statusManuallySet: false
             };
+
+            initializeActivityStatus(newActivity);
 
             state.activities.push(newActivity);
 
