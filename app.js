@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
         editMode: false,
         editingItem: null,
         userId: null,
-        dataLoaded: false
+        dataLoaded: false,
+        currentTaskFilter: 'all'
     };
 
     const ASSIGNEES = {
@@ -96,6 +97,43 @@ document.addEventListener('DOMContentLoaded', function() {
             normalized[date] = tasks.map(task => normalizeStoredDailyTask(task));
         });
         return normalized;
+    }
+
+    function sortTasksByCompletion(tasks) {
+        if (!Array.isArray(tasks)) return [];
+
+        return tasks.slice().sort((a, b) => {
+            const aCompleted = a && a.completed ? 1 : 0;
+            const bCompleted = b && b.completed ? 1 : 0;
+
+            if (aCompleted === bCompleted) {
+                return 0;
+            }
+
+            return aCompleted - bCompleted;
+        });
+    }
+
+    function reorderTodayTasksInState() {
+        const today = getCurrentDate();
+        const todayTasks = state.dailyTasks[today];
+
+        if (!Array.isArray(todayTasks)) {
+            return false;
+        }
+
+        const temporaryTasks = sortTasksByCompletion(todayTasks.filter(task => !task.isRecurring));
+        const recurringTasks = sortTasksByCompletion(todayTasks.filter(task => task.isRecurring));
+
+        const reorderedTasks = [...temporaryTasks, ...recurringTasks];
+        const changed = reorderedTasks.length !== todayTasks.length ||
+            reorderedTasks.some((task, index) => task !== todayTasks[index]);
+
+        if (changed) {
+            state.dailyTasks[today] = reorderedTasks;
+        }
+
+        return changed;
     }
 
     function normalizeActivities() {
@@ -1709,12 +1747,25 @@ document.addEventListener('DOMContentLoaded', function() {
             tasksChanged = true;
         }
 
+        if (reorderTodayTasksInState()) {
+            tasksChanged = true;
+        }
+
         if (tasksChanged) {
             saveDataToFirestore();
         }
 
         const finalTodayTasks = state.dailyTasks[today];
-        const recurringTasks = finalTodayTasks.filter(task => task.isRecurring);
+        const recurringTasks = finalTodayTasks
+            .filter(task => task.isRecurring)
+            .slice()
+            .sort((a, b) => {
+                if (!!a.completed !== !!b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+
+                return (a.activityName || '').localeCompare(b.activityName || '');
+            });
         const finalTemporaryTasks = finalTodayTasks.filter(task => !task.isRecurring);
 
         // 各グループをソート (活動名でソート)
@@ -1778,15 +1829,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // フィルターボタンのイベントリスナーを設定
         const filterButtons = document.querySelectorAll('.filter-btn');
+        const activeFilter = state.currentTaskFilter || 'all';
+
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+
         filterButtons.forEach(button => {
+            const filterValue = button.dataset.filter || 'all';
+
+            if (filterValue === activeFilter) {
+                button.classList.add('active');
+            }
+
             button.addEventListener('click', () => {
+                state.currentTaskFilter = filterValue;
                 filterButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-                
-                const filter = button.dataset.filter;
-                filterTasks(filter);
+
+                filterTasks(filterValue);
             });
         });
+
+        filterTasks(activeFilter);
     }
     
     // タスクリストをレンダリングする共通関数
@@ -1826,8 +1889,15 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.addEventListener('change', () => {
                 task.completed = checkbox.checked;
                 taskItem.classList.toggle('task-completed', checkbox.checked);
+                const orderChanged = reorderTodayTasksInState();
                 updateTaskCompletion();
                     saveDataToFirestore();
+
+                if (orderChanged) {
+                    renderDailyTasks();
+                } else {
+                    filterTasks(state.currentTaskFilter || 'all');
+                }
             });
 
             // 削除ボタンのイベントリスナーを設定
