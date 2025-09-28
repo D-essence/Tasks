@@ -159,13 +159,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (!activity.statusManuallySet && activity.status === 'completed') {
+            activity.status = 'in-progress';
+            activity.statusManuallySet = false;
+            return;
+        }
+
         if (!activity.status) {
             activity.status = getDefaultStatusFromTimeline(activity);
             activity.statusManuallySet = false;
             return;
         }
 
-        if (!activity.statusManuallySet && (activity.status === 'in-progress' || activity.status === 'completed')) {
+        if (!activity.statusManuallySet && activity.status === 'in-progress') {
             activity.status = getDefaultStatusFromTimeline(activity);
             activity.statusManuallySet = false;
         }
@@ -827,16 +833,36 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!activity || !Array.isArray(activity.kpis) || activity.kpis.length === 0) {
             return activity.progress || 0; // KPIがなければ現在の進捗度を返す
         }
-        
+
         const totalKPIs = activity.kpis.length;
-        const completedKPIs = activity.kpis.filter(kpi => 
+        const completedKPIs = activity.kpis.filter(kpi =>
             typeof kpi === 'object' && kpi !== null && kpi.completed
         ).length;
-        
+
         // 進捗率を計算して四捨五入
         const progress = Math.round((completedKPIs / totalKPIs) * 100);
-        
+
         return progress;
+    }
+
+    function recalculateActivityProgress(activity) {
+        if (!activity) return;
+
+        const newProgress = calculateProgressFromKPIs(activity);
+        if (Number.isNaN(newProgress)) return;
+
+        activity.progress = newProgress;
+
+        if (newProgress >= 100) {
+            activity.completed = true;
+            if (activity.id) {
+                removeCompletedActivityTasks(activity.id);
+            }
+        } else {
+            activity.completed = false;
+        }
+
+        syncStatusWithProgress(activity);
     }
 
     // KPIの残り時間を計算する関数
@@ -925,20 +951,8 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.addEventListener('change', () => {
                 // KPIの完了状態を更新
                 activity.kpis[index].completed = checkbox.checked;
-                
-                // 進捗度を再計算
-                activity.progress = calculateProgressFromKPIs(activity);
 
-                // 100%の場合は完了フラグも設定
-                if (activity.progress >= 100) {
-                    activity.completed = true;
-                    // 完了した事業のタスクを今日のタスクから削除
-                    removeCompletedActivityTasks(activity.id);
-                } else {
-                    activity.completed = false;
-                }
-
-                syncStatusWithProgress(activity);
+                recalculateActivityProgress(activity);
 
                 // UI更新
                 const kpiTextElement = kpiItem.querySelector('.detail-item-content');
@@ -1433,20 +1447,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (kpiIndex !== -1) {
             // KPIの完了状態を更新
             activity.kpis[kpiIndex].completed = isCompleted;
-            
-            // 進捗度を再計算
-            activity.progress = calculateProgressFromKPIs(activity);
 
-            // 100%の場合は完了フラグも設定
-            if (activity.progress >= 100) {
-                activity.completed = true;
-                // 完了した事業のタスクを今日のタスクから削除
-                removeCompletedActivityTasks(activity.id);
-            } else {
-                activity.completed = false;
-            }
-
-            syncStatusWithProgress(activity);
+            recalculateActivityProgress(activity);
 
             // データを保存
                 saveDataToFirestore();
@@ -1910,7 +1912,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (selectedDate && isValidDate(selectedDate)) {
                         newItem = { text: kpiText, deadline: selectedDate, completed: false, assignee: kpiAssignee };
                         activity.kpis.push(newItem);
-                    saveDataToFirestore();
+                        recalculateActivityProgress(activity);
+                        saveDataToFirestore();
                         renderActivityDetail();
                     }
                 });
@@ -2317,7 +2320,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     name,
                     timeline,
                     progress: calculatedProgress,
-                    completed: calculatedProgress >= 100 || oldActivity.completed,
+                    completed: calculatedProgress >= 100,
                     notes: oldActivity.notes || '',
                     kpis: mergedKpis,
                     phases,
