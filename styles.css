@@ -1505,3 +1505,26 @@ body {
     }
 }
 
+@media (orientation: landscape) and (max-height: 820px) {
+    .assignee-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .assignee-section {
+        width: 100%;
+    }
+
+    .assignee-section .daily-task-list,
+    .daily-task-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .task-item {
+        padding: 0.9rem;
+    }
+}
+
