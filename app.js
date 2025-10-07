@@ -1775,7 +1775,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const addTaskSection = document.createElement('div');
         addTaskSection.className = 'daily-task-add-section';
         addTaskSection.innerHTML = `
-            <h3 class="daily-task-section-title">今日だけのタスクを追加(激務のエリサラの10倍の量)</h3>
+            <h3 class="daily-task-section-title">激務のエリサラの10倍の量を目安に‼︎</h3>
             <div class="task-add-form">
                 <input type="text" id="new-temporary-task" placeholder="具体的なタスクを入力..." class="task-add-input">
                 <select id="new-temporary-task-assignee" class="task-assignee-select assignee-select">
