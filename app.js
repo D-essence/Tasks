@@ -1793,7 +1793,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const temporarySection = document.createElement('div');
         temporarySection.className = 'daily-task-section temporary-tasks';
         temporarySection.innerHTML = `
-            <h3 class="daily-task-section-title">今日だけのタスク</h3>
+            <h3 class="daily-task-section-title">今日だけのタスク(具体的に)</h3>
         `;
         const temporaryWrapper = document.createElement('div');
         temporaryWrapper.className = 'assignee-sections';
