@@ -1764,12 +1764,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     return a.completed ? 1 : -1;
                 }
 
-                return (a.activityName || '').localeCompare(b.activityName || '');
+                const activityComparison = (a.activityName || '').localeCompare(b.activityName || '');
+                if (activityComparison !== 0) {
+                    return activityComparison;
+                }
+
+                return (a.name || a.text || '').localeCompare(b.name || b.text || '');
             });
         const finalTemporaryTasks = finalTodayTasks.filter(task => !task.isRecurring);
-
-        // 各グループをソート (活動名でソート)
-        recurringTasks.sort((a, b) => (a.activityName || '').localeCompare(b.activityName || ''));
 
         // タスク追加セクションの表示
         const addTaskSection = document.createElement('div');
